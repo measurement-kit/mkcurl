@@ -46,6 +46,8 @@ const char *mk_curlx_response_get_request_headers(mk_curlx_response_t *res);
 
 const char *mk_curlx_response_get_response_headers(mk_curlx_response_t *res);
 
+const char *mk_curlx_response_get_certificate_chain(mk_curlx_response_t *res);
+
 void mk_curlx_response_delete(mk_curlx_response_t *res);
 
 mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req);
@@ -141,6 +143,7 @@ struct mk_curlx_response {
   std::string logs;
   std::string request_headers;
   std::string response_headers;
+  std::string certs;
 };
 
 int mk_curlx_response_get_error(mk_curlx_response_t *res) {
@@ -177,6 +180,10 @@ const char *mk_curlx_response_get_request_headers(mk_curlx_response_t *res) {
 
 const char *mk_curlx_response_get_response_headers(mk_curlx_response_t *res) {
   return (res != nullptr) ? res->response_headers.c_str() : "";
+}
+
+const char *mk_curlx_response_get_certificate_chain(mk_curlx_response_t *res) {
+  return (res != nullptr) ? res->certs.c_str() : "";
 }
 
 void mk_curlx_response_delete(mk_curlx_response_t *res) { delete res; }
@@ -435,6 +442,11 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
     res->logs += "curl_easy_setopt(CURLOPT_FOLLOWLOCATION) failed\n";
     return res.release();
   }
+  if ((res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_CERTINFO,
+                                         1L)) != CURLE_OK) {
+    res->logs += "curl_easy_setopt(CURLOPT_CERTINFO) failed\n";
+    return res.release();
+  }
   if ((res->error = MK_CURLX_EASY_PERFORM(handle.get())) != CURLE_OK) {
     res->logs += "curl_easy_perform() failed\n";
     return res.release();
@@ -464,7 +476,32 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
     }
     if (url != nullptr) res->redirect_url = url;
   }
-  // TODO(bassosimone): collect certificate chain
+  {
+    curl_certinfo *certinfo = nullptr;
+    if ((res->error = MK_CURLX_EASY_GETINFO(
+             handle.get(), CURLINFO_CERTINFO, &certinfo)) != CURLE_OK) {
+      res->logs += "curl_easy_getinfo(CURLINFO_CERTINFO) failed\n";
+      return res.release();
+    }
+    if (certinfo != nullptr && certinfo->num_of_certs > 0) {
+      for (int i = 0; i < certinfo->num_of_certs; i++) {
+        for (auto slist = certinfo->certinfo[i]; slist; slist = slist->next) {
+          if (slist->data != nullptr) {
+            // This is a linked list with "key:value" strings. We change the
+            // formar slightly so that parsing is easier.
+            std::string s = slist->data;
+            if (s.find("Cert:") == 0) {
+              res->certs += s.substr(5);
+            } else {
+              res->certs += "# ";
+              res->certs += s;
+            }
+            res->certs += "\n";
+          }
+        }
+      }
+    }
+  }
   res->logs += "curl_easy_perform() success\n";
   return res.release();
 }

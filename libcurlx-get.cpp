@@ -53,6 +53,11 @@ int main(int argc, char **argv) {
             << mk_curlx_response_get_response_headers(res.get())
             << "=== END RESPONSE HEADERS ==="
             << std::endl << std::endl;
+  std::clog << "=== BEGIN CERTIFICATE CHAIN ==="
+            << std::endl
+            << mk_curlx_response_get_certificate_chain(res.get())
+            << "=== END CERTIFICATE CHAIN ==="
+            << std::endl << std::endl;
   std::clog << "=== BEGIN LOGS ==="
             << std::endl
             << mk_curlx_response_get_logs(res.get())
