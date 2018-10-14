@@ -9,6 +9,8 @@ typedef struct mk_curlx_request mk_curlx_request_t;
 
 mk_curlx_request_t *mk_curlx_request_new(void);
 
+void mk_curlx_request_set_ca_path(mk_curlx_request_t *req, const char *p);
+
 void mk_curlx_request_enable_http2(mk_curlx_request_t *req);
 
 void mk_curlx_request_set_method_post(mk_curlx_request_t *req);
@@ -82,6 +84,7 @@ using mk_curlx_response_uptr = std::unique_ptr<mk_curlx_response_t,
 #include <curl/curl.h>
 
 struct mk_curlx_request {
+  std::string ca_path;
   bool enable_http2 = false;
   bool method_post = false;
   std::string url;
@@ -94,6 +97,10 @@ struct mk_curlx_request {
 
 mk_curlx_request_t *mk_curlx_request_new() {
   return new mk_curlx_request_t{};
+}
+
+void mk_curlx_request_set_ca_path(mk_curlx_request_t *req, const char *p) {
+  if (req != nullptr && p != nullptr) req->ca_path = p;
 }
 
 void mk_curlx_request_enable_http2(mk_curlx_request_t *req) {
@@ -360,9 +367,7 @@ static int mk_curlx_debug_cb(CURL *handle,
 //
 // 2. Allow to disable CURLOPT_SSL_VERIFYHOST
 //
-// 3. Allow to set CURLOPT_CAINFO to set what bundle to use on mobile
-//
-// 4. Allow to set a specific SSL version with CURLOPT_SSLVERSION
+// 3. Allow to set a specific SSL version with CURLOPT_SSLVERSION
 mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
   if (req == nullptr) return nullptr;
   mk_curlx_response_uptr res{new mk_curlx_response_t{}};
@@ -379,6 +384,12 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
       res->logs += "curl_slist_append() failed\n";
       return res.release();
     }
+  }
+  if (!req->ca_path.empty() &&
+      (res->error = curl_easy_setopt(handle.get(), CURLOPT_CAINFO,
+                                     req->ca_path.c_str())) != CURLE_OK) {
+    res->logs += "curl_easy_setopt(CURLOPT_CAINFO) failed\n";
+    return res.release();
   }
   if (req->enable_http2 == true &&
       (res->error = curl_easy_setopt(handle.get(), CURLOPT_HTTP_VERSION,
