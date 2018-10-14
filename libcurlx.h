@@ -479,7 +479,7 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
       return res.release();
     }
     if (status_code < 100 || status_code > 600) {
-      res->error = CURLE_HTTP_RETURNED_ERROR;
+      res->error = CURLE_HTTP_RETURNED_ERROR;  // XXX
       res->logs += "Invalid HTTP status code value: ";
       res->logs += std::to_string(status_code);
       res->logs += "\n";
