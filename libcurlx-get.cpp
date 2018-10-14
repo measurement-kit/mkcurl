@@ -15,6 +15,7 @@ int main(int argc, char **argv) {
     std::clog << "Out of memory" << std::endl;
     exit(EXIT_FAILURE);
   }
+  mk_curlx_request_enable_http2(req.get());
   mk_curlx_request_set_url(req.get(), argv[1]);
   mk_curlx_response_uptr res{mk_curlx_perform(req.get())};
   if (!res) {

@@ -9,6 +9,8 @@ typedef struct mk_curlx_request mk_curlx_request_t;
 
 mk_curlx_request_t *mk_curlx_request_new(void);
 
+void mk_curlx_request_enable_http2(mk_curlx_request_t *req);
+
 void mk_curlx_request_set_method_post(mk_curlx_request_t *req);
 
 void mk_curlx_request_set_url(mk_curlx_request_t *req, const char *u);
@@ -70,6 +72,7 @@ using mk_curlx_response_uptr = std::unique_ptr<mk_curlx_response_t,
 #include <curl/curl.h>
 
 struct mk_curlx_request {
+  bool enable_http2 = false;
   bool method_post = false;
   std::string url;
   std::vector<std::string> headers;
@@ -79,6 +82,10 @@ struct mk_curlx_request {
 
 mk_curlx_request_t *mk_curlx_request_new() {
   return new mk_curlx_request_t{};
+}
+
+void mk_curlx_request_enable_http2(mk_curlx_request_t *req) {
+  if (req != nullptr) req->enable_http2 = true;
 }
 
 void mk_curlx_request_set_method_post(mk_curlx_request_t *req) {
@@ -320,6 +327,12 @@ mk_curlx_response_t *mk_curlx_perform(mk_curlx_request_t *req) {
       res->logs += "curl_slist_append() failed\n";
       return res.release();
     }
+  }
+  if (req->enable_http2 == true &&
+      (res->error = curl_easy_setopt(handle.get(), CURLOPT_HTTP_VERSION,
+                                     CURL_HTTP_VERSION_2_0)) != CURLE_OK) {
+    res->logs += "curl_easy_setopt(CURLOPT_HTTP_VERSION) failed\n";
+    return res.release();
   }
   if (headers.p != nullptr &&
       (res->error = MK_CURLX_EASY_SETOPT(
