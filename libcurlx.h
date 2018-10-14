@@ -40,7 +40,7 @@ const char *mk_curlx_response_get_logs(mk_curlx_response_t *res);
 
 void mk_curlx_response_delete(mk_curlx_response_t *res);
 
-mk_curlx_response_t *mk_curlx_perform(mk_curlx_request_t *req);
+mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req);
 
 #ifdef __cplusplus
 }  // extern "C"
@@ -311,7 +311,7 @@ static int mk_curlx_debug_cb(CURL *handle,
 
 }  // extern "C"
 
-mk_curlx_response_t *mk_curlx_perform(mk_curlx_request_t *req) {
+mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
   if (req == nullptr) return nullptr;
   mk_curlx_response_uptr res{new mk_curlx_response_t{}};
   mk_curlx_uptr handle{MK_CURLX_EASY_INIT()};
