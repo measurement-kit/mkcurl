@@ -38,6 +38,10 @@ double mk_curlx_response_get_bytes_recv(mk_curlx_response_t *res);
 
 const char *mk_curlx_response_get_logs(mk_curlx_response_t *res);
 
+const char *mk_curlx_response_get_request_headers(mk_curlx_response_t *res);
+
+const char *mk_curlx_response_get_response_headers(mk_curlx_response_t *res);
+
 void mk_curlx_response_delete(mk_curlx_response_t *res);
 
 mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req);
@@ -121,6 +125,8 @@ struct mk_curlx_response {
   double bytes_sent = 0.0;
   double bytes_recv = 0.0;
   std::string logs;
+  std::string request_headers;
+  std::string response_headers;
 };
 
 int mk_curlx_response_get_error(mk_curlx_response_t *res) {
@@ -149,6 +155,14 @@ double mk_curlx_response_get_bytes_recv(mk_curlx_response_t *res) {
 
 const char *mk_curlx_response_get_logs(mk_curlx_response_t *res) {
   return (res != nullptr) ? res->logs.c_str() : "";
+}
+
+const char *mk_curlx_response_get_request_headers(mk_curlx_response_t *res) {
+  return (res != nullptr) ? res->request_headers.c_str() : "";
+}
+
+const char *mk_curlx_response_get_response_headers(mk_curlx_response_t *res) {
+  return (res != nullptr) ? res->response_headers.c_str() : "";
 }
 
 void mk_curlx_response_delete(mk_curlx_response_t *res) { delete res; }
@@ -225,7 +239,7 @@ static int mk_curlx_debug_cb(CURL *handle,
   (void)handle;
   auto res = static_cast<mk_curlx_response_t *>(userptr);
 
-  auto log_many_lines = [&](std::string prefix, std::string str) {
+  auto log_many_lines = [&](std::string prefix, const std::string &str) {
     std::stringstream ss;
     ss << str;
     std::string line;
@@ -244,7 +258,11 @@ static int mk_curlx_debug_cb(CURL *handle,
       log_many_lines("", std::string{(char *)data, size});
       break;
     case CURLINFO_HEADER_IN:
-      log_many_lines("<", std::string{(char *)data, size});
+      {
+        std::string s{(char *)data, size};
+        log_many_lines("<", s);
+        res->response_headers += s;
+      }
       break;
     case CURLINFO_DATA_IN:
       log_many_lines("<data:", std::to_string(size));
@@ -253,7 +271,11 @@ static int mk_curlx_debug_cb(CURL *handle,
       log_many_lines("<tls_data:", std::to_string(size));
       break;
     case CURLINFO_HEADER_OUT:
-      log_many_lines(">", std::string{(char *)data, size});
+      {
+        std::string s{(char *)data, size};
+        log_many_lines(">", s);
+        res->request_headers += s;
+      }
       break;
     case CURLINFO_DATA_OUT:
       log_many_lines(">data:", std::to_string(size));
@@ -416,7 +438,7 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
     }
     if (url != nullptr) res->redirect_url = url;
   }
-  // TODO(bassosimone): collect certificate chain, save headers,
+  // TODO(bassosimone): collect certificate chain,
   // and add support for using a SOCKSv5 proxy.
   res->logs += "curl_easy_perform() success\n";
   return res.release();

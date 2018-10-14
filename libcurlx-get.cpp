@@ -41,6 +41,16 @@ int main(int argc, char **argv) {
             << std::endl
             << "=== END SUMMARY ==="
             << std::endl << std::endl;
+  std::clog << "=== BEGIN REQUEST HEADERS ==="
+            << std::endl
+            << mk_curlx_response_get_request_headers(res.get())
+            << "=== END REQUEST HEADERS ==="
+            << std::endl << std::endl;
+  std::clog << "=== BEGIN RESPONSE HEADERS ==="
+            << std::endl
+            << mk_curlx_response_get_response_headers(res.get())
+            << "=== END RESPONSE HEADERS ==="
+            << std::endl << std::endl;
   std::clog << "=== BEGIN LOGS ==="
             << std::endl
             << mk_curlx_response_get_logs(res.get())
