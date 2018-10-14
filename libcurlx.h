@@ -22,6 +22,8 @@ void mk_curlx_request_set_body(mk_curlx_request_t *req, const char *b);
 
 void mk_curlx_request_set_timeout(mk_curlx_request_t *req, unsigned timeout);
 
+void mk_curlx_request_set_proxy_url(mk_curlx_request_t *req, const char *u);
+
 void mk_curlx_request_delete(mk_curlx_request_t *req);
 
 typedef struct mk_curlx_response mk_curlx_response_t;
@@ -82,6 +84,7 @@ struct mk_curlx_request {
   std::vector<std::string> headers;
   std::string body;
   unsigned timeout = 7;
+  std::string proxy_url;
 };
 
 mk_curlx_request_t *mk_curlx_request_new() {
@@ -113,6 +116,10 @@ void mk_curlx_request_set_body(mk_curlx_request_t *req, const char *b) {
 
 void mk_curlx_request_set_timeout(mk_curlx_request_t *req, unsigned timeout) {
   if (req != nullptr) req->timeout = timeout;
+}
+
+void mk_curlx_request_set_proxy_url(mk_curlx_request_t *req, const char *u) {
+  if (req != nullptr && u != nullptr) req->proxy_url = u;
 }
 
 void mk_curlx_request_delete(mk_curlx_request_t *req) { delete req; }
@@ -409,6 +416,12 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
     res->logs += "curl_easy_setopt(CURLOPT_VERBOSE) failed\n";
     return res.release();
   }
+  if (!req->proxy_url.empty() &&
+      (res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_PROXY,
+                                         req->proxy_url.c_str())) != CURLE_OK) {
+    res->logs += "curl_easy_setopt(CURLOPT_PROXY) failed\n";
+    return res.release();
+  }
   if ((res->error = MK_CURLX_EASY_PERFORM(handle.get())) != CURLE_OK) {
     res->logs += "curl_easy_perform() failed\n";
     return res.release();
@@ -438,8 +451,7 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
     }
     if (url != nullptr) res->redirect_url = url;
   }
-  // TODO(bassosimone): collect certificate chain,
-  // and add support for using a SOCKSv5 proxy.
+  // TODO(bassosimone): collect certificate chain, follow location
   res->logs += "curl_easy_perform() success\n";
   return res.release();
 }
