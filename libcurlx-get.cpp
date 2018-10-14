@@ -16,6 +16,7 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
   //mk_curlx_request_set_proxy_url(req.get(), "socks5h://127.0.0.1:9050");
+  mk_curlx_request_enable_follow_redirect(req.get());
   mk_curlx_request_enable_http2(req.get());
   mk_curlx_request_set_url(req.get(), argv[1]);
   mk_curlx_response_uptr res{mk_curlx_perform(req.get())};

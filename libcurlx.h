@@ -24,6 +24,8 @@ void mk_curlx_request_set_timeout(mk_curlx_request_t *req, unsigned timeout);
 
 void mk_curlx_request_set_proxy_url(mk_curlx_request_t *req, const char *u);
 
+void mk_curlx_request_enable_follow_redirect(mk_curlx_request_t *req);
+
 void mk_curlx_request_delete(mk_curlx_request_t *req);
 
 typedef struct mk_curlx_response mk_curlx_response_t;
@@ -85,6 +87,7 @@ struct mk_curlx_request {
   std::string body;
   unsigned timeout = 7;
   std::string proxy_url;
+  bool follow_redir = false;
 };
 
 mk_curlx_request_t *mk_curlx_request_new() {
@@ -120,6 +123,10 @@ void mk_curlx_request_set_timeout(mk_curlx_request_t *req, unsigned timeout) {
 
 void mk_curlx_request_set_proxy_url(mk_curlx_request_t *req, const char *u) {
   if (req != nullptr && u != nullptr) req->proxy_url = u;
+}
+
+void mk_curlx_request_enable_follow_redirect(mk_curlx_request_t *req) {
+  if (req != nullptr) req->follow_redir = true;
 }
 
 void mk_curlx_request_delete(mk_curlx_request_t *req) { delete req; }
@@ -377,7 +384,7 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
   }
   if (req->method_post == true &&
       (res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_POST,
-                                         1)) != CURLE_OK) {
+                                         1L)) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_POST) failed\n";
     return res.release();
   }
@@ -422,6 +429,12 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
     res->logs += "curl_easy_setopt(CURLOPT_PROXY) failed\n";
     return res.release();
   }
+  if (req->follow_redir == true &&
+      (res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_FOLLOWLOCATION,
+                                         1L)) != CURLE_OK) {
+    res->logs += "curl_easy_setopt(CURLOPT_FOLLOWLOCATION) failed\n";
+    return res.release();
+  }
   if ((res->error = MK_CURLX_EASY_PERFORM(handle.get())) != CURLE_OK) {
     res->logs += "curl_easy_perform() failed\n";
     return res.release();
@@ -451,7 +464,7 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
     }
     if (url != nullptr) res->redirect_url = url;
   }
-  // TODO(bassosimone): collect certificate chain, follow location
+  // TODO(bassosimone): collect certificate chain
   res->logs += "curl_easy_perform() success\n";
   return res.release();
 }
