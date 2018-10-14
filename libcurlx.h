@@ -354,6 +354,15 @@ static int mk_curlx_debug_cb(CURL *handle,
 
 }  // extern "C"
 
+// TODO(bassosimone):
+//
+// 1. Allow to disable CURLOPT_SSL_VERIFYPEER
+//
+// 2. Allow to disable CURLOPT_SSL_VERIFYHOST
+//
+// 3. Allow to set CURLOPT_CAINFO to set what bundle to use on mobile
+//
+// 4. Allow to set a specific SSL version with CURLOPT_SSLVERSION
 mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
   if (req == nullptr) return nullptr;
   mk_curlx_response_uptr res{new mk_curlx_response_t{}};
