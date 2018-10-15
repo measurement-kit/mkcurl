@@ -7,7 +7,7 @@ matrix:
       env: BUILD_TYPE="vanilla"
            CMAKE_BUILD_OPTIONS="-v"
            CMAKE_OPTIONS="-G Ninja -D CMAKE_BUILD_TYPE=Release"
-           CTEST_OPTIONS="--output-on-failure -j2"
+           CTEST_OPTIONS="-V -j1"
       script:
         - ./.ci/docker/script/docker-run bassosimone/mk-debian:testing cmake
       services:
