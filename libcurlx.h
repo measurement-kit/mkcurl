@@ -17,8 +17,7 @@ void mk_curlx_request_set_method_post(mk_curlx_request_t *req);
 
 void mk_curlx_request_set_url(mk_curlx_request_t *req, const char *u);
 
-void mk_curlx_request_add_header(mk_curlx_request_t *req, const char *k,
-                                 const char *v);
+void mk_curlx_request_add_header(mk_curlx_request_t *req, const char *h);
 
 void mk_curlx_request_set_body(mk_curlx_request_t *req, const char *b);
 
@@ -119,13 +118,9 @@ void mk_curlx_request_set_url(mk_curlx_request_t *req, const char *u) {
   if (req != nullptr && u != nullptr) req->url = u;
 }
 
-void mk_curlx_request_add_header(mk_curlx_request_t *req, const char *k,
-                                 const char *v) {
-  if (req != nullptr && k != nullptr && v != nullptr) {
-    std::string header = k;
-    header += ": ";
-    header += v;
-    req->headers.push_back(std::move(header));
+void mk_curlx_request_add_header(mk_curlx_request_t *req, const char *h) {
+  if (req != nullptr && h != nullptr) {
+    req->headers.push_back(h);
   }
 }
 
