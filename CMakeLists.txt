@@ -51,7 +51,7 @@ if(${BUILD_TESTING})
   add_test(NAME redirect_test COMMAND
            libcurlx-client --follow-redirect http://google.com)
   add_test(NAME post COMMAND
-           libcurlx-client --post
+           libcurlx-client --post --header "Content-Type: application/json"
            --post-data "{\"net-tests\":[{\"input-hashes\":null,\"name\":\"http_invalid_request_line\",\"test-helpers\":[\"tcp-echo\"],\"version\":\"0.0.3\"}]}"
            https://bouncer.ooni.io/bouncer/net-tests)
 endif()

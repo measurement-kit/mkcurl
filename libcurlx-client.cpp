@@ -28,6 +28,7 @@ static void usage() {
   std::clog << "  --ca-bundle-path <path> : path to OpenSSL CA bundle\n";
   std::clog << "  --enable-http2          : enable HTTP2 support\n";
   std::clog << "  --follow-redirect       : enable following redirects\n";
+  std::clog << "  --header <header>       : add <header> to headers\n";
   std::clog << "  --post                  : use POST rather than GET\n";
   std::clog << "  --post-data <data>      : send <data> as body\n";
   std::clog << std::endl;
@@ -96,6 +97,7 @@ int main(int, char **argv) {
   {
     argh::parser cmdline;
     cmdline.add_param("ca-bundle-path");
+    cmdline.add_param("header");
     cmdline.add_param("post-data");
     cmdline.parse(argv);
     for (auto &flag : cmdline.flags()) {
@@ -114,6 +116,8 @@ int main(int, char **argv) {
     for (auto &param : cmdline.params()) {
       if (param.first == "ca-bundle-path") {
         mk_curlx_request_set_ca_path(req.get(), param.second.c_str());
+      } else if (param.first == "header") {
+        mk_curlx_request_add_header(req.get(), param.second.c_str());
       } else if (param.first == "post-data") {
         mk_curlx_request_set_body(req.get(), param.second.c_str());
       } else {
