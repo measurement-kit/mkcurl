@@ -79,6 +79,8 @@ using mk_curlx_response_uptr = std::unique_ptr<mk_curlx_response_t,
 
 #ifdef MK_CURLX_INLINE_IMPL
 
+#include <assert.h>
+
 #include <sstream>
 #include <string>
 #include <vector>
@@ -120,7 +122,10 @@ void mk_curlx_request_set_url(mk_curlx_request_t *req, const char *u) {
 void mk_curlx_request_add_header(mk_curlx_request_t *req, const char *k,
                                  const char *v) {
   if (req != nullptr && k != nullptr && v != nullptr) {
-    req->headers.push_back((std::stringstream{} << k << ": " << v).str());
+    std::string header = k;
+    header += ": ";
+    header += v;
+    req->headers.push_back(std::move(header));
   }
 }
 
@@ -345,12 +350,12 @@ static int mk_curlx_debug_cb(CURL *handle,
     case CURLINFO_HEADER_IN:
     case CURLINFO_DATA_IN:
     case CURLINFO_SSL_DATA_IN:
-      res->bytes_recv += size;
+      res->bytes_recv += (double)size;
       break;
     case CURLINFO_HEADER_OUT:
     case CURLINFO_DATA_OUT:
     case CURLINFO_SSL_DATA_OUT:
-      res->bytes_sent += size;
+      res->bytes_sent += (double)size;
       break;
     case CURLINFO_TEXT:
     case CURLINFO_END:
