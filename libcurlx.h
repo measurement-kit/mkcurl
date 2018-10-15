@@ -480,12 +480,11 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
       res->logs += "curl_easy_getinfo(CURLINFO_RESPONSE_CODE) failed\n";
       return res.release();
     }
-    if (status_code < 100 || status_code > 600) {
-      res->error = CURLE_HTTP_RETURNED_ERROR;  // XXX
-      res->logs += "Invalid HTTP status code value: ";
-      res->logs += std::to_string(status_code);
-      res->logs += "\n";
-      return res.release();
+    // In case the status code is clearly weird, normalize if for the cast
+    // below to succeed and then pass it along. We assume that the caller is
+    // checking it and is able to notice that something is wrong.
+    if (status_code < 0 || status_code > INT_MAX) {
+      status_code = INT_MAX;
     }
     res->status_code = (int)status_code;
   }
