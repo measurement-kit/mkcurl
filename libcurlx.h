@@ -17,8 +17,7 @@ void mk_curlx_request_set_method_post(mk_curlx_request_t *req);
 
 void mk_curlx_request_set_url(mk_curlx_request_t *req, const char *u);
 
-void mk_curlx_request_add_header(mk_curlx_request_t *req, const char *k,
-                                 const char *v);
+void mk_curlx_request_add_header(mk_curlx_request_t *req, const char *h);
 
 void mk_curlx_request_set_body(mk_curlx_request_t *req, const char *b);
 
@@ -79,6 +78,8 @@ using mk_curlx_response_uptr = std::unique_ptr<mk_curlx_response_t,
 
 #ifdef MK_CURLX_INLINE_IMPL
 
+#include <assert.h>
+
 #include <sstream>
 #include <string>
 #include <vector>
@@ -117,10 +118,9 @@ void mk_curlx_request_set_url(mk_curlx_request_t *req, const char *u) {
   if (req != nullptr && u != nullptr) req->url = u;
 }
 
-void mk_curlx_request_add_header(mk_curlx_request_t *req, const char *k,
-                                 const char *v) {
-  if (req != nullptr && k != nullptr && v != nullptr) {
-    req->headers.push_back((std::stringstream{} << k << ": " << v).str());
+void mk_curlx_request_add_header(mk_curlx_request_t *req, const char *h) {
+  if (req != nullptr && h != nullptr) {
+    req->headers.push_back(h);
   }
 }
 
@@ -345,12 +345,12 @@ static int mk_curlx_debug_cb(CURL *handle,
     case CURLINFO_HEADER_IN:
     case CURLINFO_DATA_IN:
     case CURLINFO_SSL_DATA_IN:
-      res->bytes_recv += size;
+      res->bytes_recv += (double)size;
       break;
     case CURLINFO_HEADER_OUT:
     case CURLINFO_DATA_OUT:
     case CURLINFO_SSL_DATA_OUT:
-      res->bytes_sent += size;
+      res->bytes_sent += (double)size;
       break;
     case CURLINFO_TEXT:
     case CURLINFO_END:
