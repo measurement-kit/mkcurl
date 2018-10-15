@@ -34,6 +34,8 @@ typedef struct mk_curlx_response mk_curlx_response_t;
 
 int mk_curlx_response_get_error(mk_curlx_response_t *res);
 
+const char *mk_curlx_response_get_redirect_url(mk_curlx_response_t *res);
+
 int mk_curlx_response_get_status_code(mk_curlx_response_t *res);
 
 const char *mk_curlx_response_get_body(mk_curlx_response_t *res);
