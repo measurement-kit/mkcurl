@@ -141,7 +141,8 @@ int main(int, char **argv) {
     exit(EXIT_FAILURE);
   }
   summary(res);
-  if (mk_curlx_response_get_status_code(res.get()) != 200) {
+  if (mk_curlx_response_get_error(res.get()) != CURLE_OK ||
+      mk_curlx_response_get_status_code(res.get()) != 200) {
     std::clog << "FATAL: the request did not succeed" << std::endl;
     exit(EXIT_FAILURE);
   }
