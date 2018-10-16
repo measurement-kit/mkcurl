@@ -60,8 +60,11 @@ if(${BUILD_TESTING})
            https://www.kernel.org)
   add_test(NAME http11_test COMMAND
            libcurlx-client https://ooni.torproject.org)
-  add_test(NAME http2_test COMMAND
-           libcurlx-client --enable-http2 https://www.google.com)
+  # TODO(bassosimone): compile cURL for Windows with http2 support
+  if(NOT "${WIN32}")
+    add_test(NAME http2_test COMMAND
+             libcurlx-client --enable-http2 https://www.google.com)
+  endif()
   add_test(NAME redirect_test COMMAND
            libcurlx-client --follow-redirect http://google.com)
   add_test(NAME post COMMAND
