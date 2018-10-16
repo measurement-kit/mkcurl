@@ -34,12 +34,9 @@ MkSetCompilerFlags()
 
 set(LIBCURLX_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
     ${CURL_INCLUDE_DIRS} ${CMAKE_REQUIRED_INCLUDES})
+include_directories(${LIBCURLX_INCLUDES})
 
-add_executable(libcurlx-client libcurlx-client.cpp)
-target_include_directories(libcurlx-client PUBLIC ${LIBCURLX_INCLUDES})
 list (APPEND LIBCURLX_LIBS ${CURL_LIBRARIES})
-install(FILES libcurlx.h DESTINATION include/measurement-kit/libcurlx)
-install(TARGETS libcurlx-client DESTINATION bin)
 if("${WIN32}" OR "${MINGW}")
   list(APPEND LIBCURLX_LIBS "ws2_32")
   if ("${MINGW}")
@@ -47,14 +44,20 @@ if("${WIN32}" OR "${MINGW}")
   endif()
 endif()
 list(APPEND LIBCURLX_LIBS Threads::Threads)
-target_link_libraries(libcurlx-client "${LIBCURLX_LIBS}")
+link_libraries("${LIBCURLX_LIBS}")
+
+add_executable(libcurlx-client libcurlx-client.cpp)
+install(FILES libcurlx.h DESTINATION include/measurement-kit/libcurlx)
+install(TARGETS libcurlx-client DESTINATION bin)
 
 # Testing
 # -------
 
 set(BUILD_TESTING "ON" CACHE BOOL "Whether to build tests")
 if(${BUILD_TESTING})
+  add_executable(unit-tests unit-tests.cpp)
   enable_testing()
+  add_test(NAME unit_tests COMMAND unit-tests)
   add_test(NAME external_ca COMMAND
            libcurlx-client --ca-bundle-path ./ca-bundle.pem
            https://www.kernel.org)
