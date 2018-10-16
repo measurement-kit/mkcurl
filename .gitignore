@@ -7,4 +7,5 @@
 /ca-bundle.pem
 /catch.hpp
 /cmake_install.cmake
+/install_manifest.txt
 /libcurlx-client

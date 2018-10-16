@@ -38,7 +38,7 @@ set(LIBCURLX_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
 add_executable(libcurlx-client libcurlx-client.cpp)
 target_include_directories(libcurlx-client PUBLIC ${LIBCURLX_INCLUDES})
 list (APPEND LIBCURLX_LIBS ${CURL_LIBRARIES})
-install(FILES libcurlx.hpp DESTINATION include/measurement-kit/libcurlx)
+install(FILES libcurlx.h DESTINATION include/measurement-kit/libcurlx)
 install(TARGETS libcurlx-client DESTINATION bin)
 if("${WIN32}" OR "${MINGW}")
   list(APPEND LIBCURLX_LIBS "ws2_32")
