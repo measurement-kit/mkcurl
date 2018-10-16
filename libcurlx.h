@@ -388,14 +388,14 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
     }
   }
   if (!req->ca_path.empty() &&
-      (res->error = curl_easy_setopt(handle.get(), CURLOPT_CAINFO,
-                                     req->ca_path.c_str())) != CURLE_OK) {
+      (res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_CAINFO,
+                                         req->ca_path.c_str())) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_CAINFO) failed\n";
     return res.release();
   }
   if (req->enable_http2 == true &&
-      (res->error = curl_easy_setopt(handle.get(), CURLOPT_HTTP_VERSION,
-                                     CURL_HTTP_VERSION_2_0)) != CURLE_OK) {
+      (res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_HTTP_VERSION,
+                                         CURL_HTTP_VERSION_2_0)) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_HTTP_VERSION) failed\n";
     return res.release();
   }
