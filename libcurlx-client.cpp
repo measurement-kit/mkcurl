@@ -17,6 +17,7 @@
 #pragma clang diagnostic pop
 #endif  // __clang__
 
+// LCOV_EXCL_START
 static void usage() {
   // clang-format off
   std::clog << "\n";
@@ -34,6 +35,7 @@ static void usage() {
   std::clog << std::endl;
   // clang-format on
 }
+// LCOV_EXCL_STOP
 
 static void summary(const mk_curlx_response_uptr &res) {
   std::clog << "=== BEGIN SUMMARY ==="
