@@ -32,6 +32,7 @@ static void usage() {
   std::clog << "  --header <header>       : add <header> to headers\n";
   std::clog << "  --post                  : use POST rather than GET\n";
   std::clog << "  --post-data <data>      : send <data> as body\n";
+  std::clog << "  --timeout <sec>         : set timeout of <sec> seconds\n";
   std::clog << std::endl;
   // clang-format on
 }
@@ -122,6 +123,12 @@ int main(int, char **argv) {
         mk_curlx_request_add_header(req.get(), param.second.c_str());
       } else if (param.first == "post-data") {
         mk_curlx_request_set_body(req.get(), param.second.c_str());
+      } else if (param.first == "timeout") {
+        // Implementation note: since this is meant to be just a testing
+        // client, we don't bother with properly validating the number that
+        // is passed here and we just use atoi(). A really robust client
+        // SHOULD instead use strtonum().
+        mk_curlx_request_set_timeout(req.get(), atoi(param.second.c_str()));
       } else {
         std::clog << "fatal: unrecognized param: " << param.first << std::endl;
         usage();
