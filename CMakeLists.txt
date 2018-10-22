@@ -47,7 +47,7 @@ list(APPEND MKCURL_LIBS Threads::Threads)
 link_libraries("${MKCURL_LIBS}")
 
 add_executable(mkcurl-client mkcurl-client.cpp)
-install(FILES mkcurl.h DESTINATION include/measurement-kit/mkcurl)
+install(FILES mkcurl.h DESTINATION include/mkcurl)
 install(TARGETS mkcurl-client DESTINATION bin)
 
 # Testing

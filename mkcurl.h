@@ -1,5 +1,6 @@
-#ifndef MEASUREMENT_KIT_MKCURL_MKCURL_H
-#define MEASUREMENT_KIT_MKCURL_MKCURL_H
+#ifndef MKCURL_MKCURL_H
+#define MKCURL_MKCURL_H
+
 #ifdef __cplusplus
 #include <memory>
 extern "C" {
@@ -530,4 +531,4 @@ mkcurl_response_t *mkcurl_perform(const mkcurl_request_t *req) {
 
 #endif  // MKCURL_INLINE_IMPL
 #endif  // __cplusplus
-#endif  // MEASUREMENT_KIT_MKCURL_MKCURL_H
+#endif  // MKCURL_MKCURL_H
