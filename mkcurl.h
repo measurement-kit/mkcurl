@@ -2,7 +2,6 @@
 #define MKCURL_MKCURL_H
 
 #ifdef __cplusplus
-#include <memory>
 extern "C" {
 #endif
 
@@ -58,6 +57,8 @@ mkcurl_response_t *mkcurl_perform(const mkcurl_request_t *req);
 
 #ifdef __cplusplus
 }  // extern "C"
+
+#include <memory>
 
 struct mkcurl_request_deleter {
   void operator()(mkcurl_request_t *req) {
