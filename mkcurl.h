@@ -23,6 +23,9 @@ void mkcurl_request_add_header(mkcurl_request_t *req, const char *h);
 
 void mkcurl_request_set_body(mkcurl_request_t *req, const char *b);
 
+void mkcurl_request_set_body_binary(mkcurl_request_t *req,
+                                    const uint8_t *b, uint64_t n);
+
 void mkcurl_request_set_timeout(mkcurl_request_t *req, int64_t timeout);
 
 void mkcurl_request_set_proxy_url(mkcurl_request_t *req, const char *u);
@@ -41,17 +44,32 @@ int64_t mkcurl_response_get_status_code(const mkcurl_response_t *res);
 
 const char *mkcurl_response_get_body(const mkcurl_response_t *res);
 
+int64_t mkcurl_response_get_body_binary(const mkcurl_response_t *res,
+                                        const uint8_t **p, uint64_t *n);
+
 double mkcurl_response_get_bytes_sent(const mkcurl_response_t *res);
 
 double mkcurl_response_get_bytes_recv(const mkcurl_response_t *res);
 
 const char *mkcurl_response_get_logs(const mkcurl_response_t *res);
 
+int64_t mkcurl_response_get_logs_binary(const mkcurl_response_t *res,
+                                        const uint8_t **p, uint64_t *n);
+
 const char *mkcurl_response_get_request_headers(const mkcurl_response_t *res);
+
+int64_t mkcurl_response_get_request_headers_binary(
+    const mkcurl_response_t *res, const uint8_t **p, uint64_t *n);
 
 const char *mkcurl_response_get_response_headers(const mkcurl_response_t *res);
 
+int64_t mkcurl_response_get_response_headers_binary(
+    const mkcurl_response_t *res, const uint8_t **p, uint64_t *n);
+
 const char *mkcurl_response_get_certificate_chain(const mkcurl_response_t *res);
+
+int64_t mkcurl_response_get_certificate_chain_binary(
+    const mkcurl_response_t *res, const uint8_t **p, uint64_t *n);
 
 void mkcurl_response_delete(mkcurl_response_t *res);
 
@@ -132,6 +150,13 @@ void mkcurl_request_set_body(mkcurl_request_t *req, const char *b) {
   if (req != nullptr && b != nullptr) req->body = b;
 }
 
+void mkcurl_request_set_body_binary(mkcurl_request_t *req,
+                                    const uint8_t *b, uint64_t n) {
+  if (req != nullptr && b != nullptr && n > 0) {
+    req->body = std::string{(char *)b, n};
+  }
+}
+
 void mkcurl_request_set_timeout(mkcurl_request_t *req, int64_t timeout) {
   if (req != nullptr) {
     req->timeout = (long)((timeout < 0)
@@ -181,6 +206,14 @@ const char *mkcurl_response_get_body(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->body.c_str() : "";
 }
 
+int64_t mkcurl_response_get_body_binary(const mkcurl_response_t *res,
+                                        const uint8_t **p, uint64_t *n) {
+  if (res == nullptr || p == nullptr || n == nullptr) return false;
+  *p = (const uint8_t *)res->body.c_str();
+  *n = (uint64_t)res->body.size();
+  return true;
+}
+
 double mkcurl_response_get_bytes_sent(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->bytes_sent : 0.0;
 }
@@ -193,17 +226,49 @@ const char *mkcurl_response_get_logs(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->logs.c_str() : "";
 }
 
+int64_t mkcurl_response_get_logs_binary(const mkcurl_response_t *res,
+                                        const uint8_t **p, uint64_t *n) {
+  if (res == nullptr || p == nullptr || n == nullptr) return false;
+  *p = (const uint8_t *)res->logs.c_str();
+  *n = (uint64_t)res->logs.size();
+  return true;
+}
+
 const char *mkcurl_response_get_request_headers(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->request_headers.c_str() : "";
+}
+
+int64_t mkcurl_response_get_request_headers_binary(
+    const mkcurl_response_t *res, const uint8_t **p, uint64_t *n) {
+  if (res == nullptr || p == nullptr || n == nullptr) return false;
+  *p = (const uint8_t *)res->request_headers.c_str();
+  *n = (uint64_t)res->request_headers.size();
+  return true;
 }
 
 const char *mkcurl_response_get_response_headers(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->response_headers.c_str() : "";
 }
 
+int64_t mkcurl_response_get_response_headers_binary(
+    const mkcurl_response_t *res, const uint8_t **p, uint64_t *n) {
+  if (res == nullptr || p == nullptr || n == nullptr) return false;
+  *p = (const uint8_t *)res->response_headers.c_str();
+  *n = (uint64_t)res->response_headers.size();
+  return true;
+}
+
 const char *mkcurl_response_get_certificate_chain(
     const mkcurl_response_t *res) {
   return (res != nullptr) ? res->certs.c_str() : "";
+}
+
+int64_t mkcurl_response_get_certificate_chain_binary(
+    const mkcurl_response_t *res, const uint8_t **p, uint64_t *n) {
+  if (res == nullptr || p == nullptr || n == nullptr) return false;
+  *p = (const uint8_t *)res->certs.c_str();
+  *n = (uint64_t)res->certs.size();
+  return true;
 }
 
 void mkcurl_response_delete(mkcurl_response_t *res) { delete res; }
