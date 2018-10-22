@@ -20,13 +20,13 @@ struct MkCurlMock {
 
 static MkCurlMock *MOCK = nullptr;
 
-// Provide definitions before including libcurlx.h so that the code will
+// Provide definitions before including mkcurl.h so that the code will
 // actually call the mocked functions rather than cURL real functions.
-#define MK_CURLX_EASY_INIT MOCK->curl_easy_init
-#define MK_CURLX_SLIST_APPEND MOCK->curl_slist_append
-#define MK_CURLX_EASY_SETOPT MOCK->curl_easy_setopt
-#define MK_CURLX_EASY_PERFORM MOCK->curl_easy_perform
-#define MK_CURLX_EASY_GETINFO MOCK->curl_easy_getinfo
+#define MKCURL_EASY_INIT MOCK->curl_easy_init
+#define MKCURL_SLIST_APPEND MOCK->curl_slist_append
+#define MKCURL_EASY_SETOPT MOCK->curl_easy_setopt
+#define MKCURL_EASY_PERFORM MOCK->curl_easy_perform
+#define MKCURL_EASY_GETINFO MOCK->curl_easy_getinfo
 
 template <typename T> void with_mock(std::function<void()> &&fun) {
   static std::mutex barrier;
@@ -44,11 +44,11 @@ template <typename T> void with_mock(std::function<void()> &&fun) {
   if (ep) std::rethrow_exception(ep);
 }
 
-// Include libcurlx implementation
+// Include mkcurl implementation
 // -------------------------------
 
-#define MK_CURLX_INLINE_IMPL
-#include "libcurlx.h"
+#define MKCURL_INLINE_IMPL
+#include "mkcurl.h"
 
 // Unit tests
 // ----------
@@ -72,9 +72,9 @@ struct MkCurlEasyInitFailure : public MkCurlMock {
 
 TEST_CASE("We deal with curl_easy_init() failure") {
   with_mock<MkCurlEasyInitFailure>([]() {
-    mk_curlx_request_uptr req{mk_curlx_request_new()};
-    mk_curlx_response_uptr resp{mk_curlx_perform(req.get())};
-    REQUIRE(mk_curlx_response_get_error(resp.get()) == CURLE_OUT_OF_MEMORY);
+    mkcurl_request_uptr req{mkcurl_request_new()};
+    mkcurl_response_uptr resp{mkcurl_perform(req.get())};
+    REQUIRE(mkcurl_response_get_error(resp.get()) == CURLE_OUT_OF_MEMORY);
   });
 }
 
@@ -97,10 +97,10 @@ struct MkCurlSlistAppendFailure : public MkCurlMock {
 
 TEST_CASE("We deal with curl_slist_append() failure") {
   with_mock<MkCurlSlistAppendFailure>([]() {
-    mk_curlx_request_uptr req{mk_curlx_request_new()};
-    mk_curlx_request_add_header(req.get(), "Content-Type: text/plain");
-    mk_curlx_response_uptr resp{mk_curlx_perform(req.get())};
-    REQUIRE(mk_curlx_response_get_error(resp.get()) == CURLE_OUT_OF_MEMORY);
+    mkcurl_request_uptr req{mkcurl_request_new()};
+    mkcurl_request_add_header(req.get(), "Content-Type: text/plain");
+    mkcurl_response_uptr resp{mkcurl_perform(req.get())};
+    REQUIRE(mkcurl_response_get_error(resp.get()) == CURLE_OUT_OF_MEMORY);
   });
 }
 
@@ -129,80 +129,80 @@ struct MkCurlEasySetoptFailure : public MkCurlMock {
 #define MK_CURL_EASY_SETOPT_FAILURE_TEST(value, func)                         \
   TEST_CASE("We deal with curl_easy_setopt failure for: " #value) {           \
     with_mock<MkCurlEasySetoptFailure<value>>([]() {                          \
-      mk_curlx_request_uptr req{mk_curlx_request_new()};                      \
+      mkcurl_request_uptr req{mkcurl_request_new()};                      \
       func(req);                                                              \
-      mk_curlx_response_uptr resp{mk_curlx_perform(req.get())};               \
-      REQUIRE(mk_curlx_response_get_error(resp.get()) == CURLE_NOT_BUILT_IN); \
+      mkcurl_response_uptr resp{mkcurl_perform(req.get())};               \
+      REQUIRE(mkcurl_response_get_error(resp.get()) == CURLE_NOT_BUILT_IN); \
     });                                                                       \
   }
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_CAINFO,
-    [](mk_curlx_request_uptr &req) {
-      mk_curlx_request_set_ca_path(req.get(), "/etc/ssl/cert.pem");
+    [](mkcurl_request_uptr &req) {
+      mkcurl_request_set_ca_path(req.get(), "/etc/ssl/cert.pem");
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_HTTP_VERSION,
-    [](mk_curlx_request_uptr &req) {
-      mk_curlx_request_enable_http2(req.get());
+    [](mkcurl_request_uptr &req) {
+      mkcurl_request_enable_http2(req.get());
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_HTTPHEADER,
-    [](mk_curlx_request_uptr &req) {
-      mk_curlx_request_add_header(req.get(), "Content-Type: text/plain");
+    [](mkcurl_request_uptr &req) {
+      mkcurl_request_add_header(req.get(), "Content-Type: text/plain");
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_POSTFIELDS,
-    [](mk_curlx_request_uptr &req) {
-      mk_curlx_request_set_method_post(req.get());
-      mk_curlx_request_set_body(req.get(), "12345 54321");
+    [](mkcurl_request_uptr &req) {
+      mkcurl_request_set_method_post(req.get());
+      mkcurl_request_set_body(req.get(), "12345 54321");
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_POST,
-    [](mk_curlx_request_uptr &req) {
-      mk_curlx_request_set_method_post(req.get());
-      mk_curlx_request_set_body(req.get(), "12345 54321");
+    [](mkcurl_request_uptr &req) {
+      mkcurl_request_set_method_post(req.get());
+      mkcurl_request_set_body(req.get(), "12345 54321");
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
-    CURLOPT_URL, [](mk_curlx_request_uptr &) {})
+    CURLOPT_URL, [](mkcurl_request_uptr &) {})
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
-    CURLOPT_WRITEFUNCTION, [](mk_curlx_request_uptr &) {})
+    CURLOPT_WRITEFUNCTION, [](mkcurl_request_uptr &) {})
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
-    CURLOPT_WRITEDATA, [](mk_curlx_request_uptr &) {})
+    CURLOPT_WRITEDATA, [](mkcurl_request_uptr &) {})
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
-    CURLOPT_TIMEOUT, [](mk_curlx_request_uptr &) {})
+    CURLOPT_TIMEOUT, [](mkcurl_request_uptr &) {})
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
-    CURLOPT_DEBUGFUNCTION, [](mk_curlx_request_uptr &) {})
+    CURLOPT_DEBUGFUNCTION, [](mkcurl_request_uptr &) {})
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
-    CURLOPT_DEBUGDATA, [](mk_curlx_request_uptr &) {})
+    CURLOPT_DEBUGDATA, [](mkcurl_request_uptr &) {})
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
-    CURLOPT_VERBOSE, [](mk_curlx_request_uptr &) {})
+    CURLOPT_VERBOSE, [](mkcurl_request_uptr &) {})
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_PROXY,
-    [](mk_curlx_request_uptr &req) {
-      mk_curlx_request_set_proxy_url(req.get(), "socks5h://127.0.0.1:9050");
+    [](mkcurl_request_uptr &req) {
+      mkcurl_request_set_proxy_url(req.get(), "socks5h://127.0.0.1:9050");
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_FOLLOWLOCATION,
-    [](mk_curlx_request_uptr &req) {
-      mk_curlx_request_enable_follow_redirect(req.get());
+    [](mkcurl_request_uptr &req) {
+      mkcurl_request_enable_follow_redirect(req.get());
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
-    CURLOPT_CERTINFO, [](mk_curlx_request_uptr &) {})
+    CURLOPT_CERTINFO, [](mkcurl_request_uptr &) {})
 
 struct MkCurlEasyPerformFailure : public MkCurlMock {
   CURL *curl_easy_init() override { return ::curl_easy_init(); }
@@ -223,10 +223,10 @@ struct MkCurlEasyPerformFailure : public MkCurlMock {
 
 TEST_CASE("We deal with curl_easy_perform() failure") {
   with_mock<MkCurlEasyPerformFailure>([]() {
-    mk_curlx_request_uptr req{mk_curlx_request_new()};
-    mk_curlx_request_add_header(req.get(), "Content-Type: text/plain");
-    mk_curlx_response_uptr resp{mk_curlx_perform(req.get())};
-    REQUIRE(mk_curlx_response_get_error(resp.get()) == CURLE_NOT_BUILT_IN);
+    mkcurl_request_uptr req{mkcurl_request_new()};
+    mkcurl_request_add_header(req.get(), "Content-Type: text/plain");
+    mkcurl_response_uptr resp{mkcurl_perform(req.get())};
+    REQUIRE(mkcurl_response_get_error(resp.get()) == CURLE_NOT_BUILT_IN);
   });
 }
 
@@ -251,9 +251,9 @@ struct MkCurlEasyGetinfoFailure : public MkCurlMock {
 #define MK_CURL_EASY_GETINFO_FAILURE_TEST(value)                              \
   TEST_CASE("We deal with curl_easy_setopt failure for: " #value) {           \
     with_mock<MkCurlEasyGetinfoFailure<value>>([]() {                         \
-      mk_curlx_request_uptr req{mk_curlx_request_new()};                      \
-      mk_curlx_response_uptr resp{mk_curlx_perform(req.get())};               \
-      REQUIRE(mk_curlx_response_get_error(resp.get()) == CURLE_NOT_BUILT_IN); \
+      mkcurl_request_uptr req{mkcurl_request_new()};                      \
+      mkcurl_response_uptr resp{mkcurl_perform(req.get())};               \
+      REQUIRE(mkcurl_response_get_error(resp.get()) == CURLE_NOT_BUILT_IN); \
     });                                                                       \
   }
 

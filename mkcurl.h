@@ -1,82 +1,82 @@
-#ifndef MEASUREMENT_KIT_LIBCURLX_LIBCURLX_H
-#define MEASUREMENT_KIT_LIBCURLX_LIBCURLX_H
+#ifndef MEASUREMENT_KIT_MKCURL_MKCURL_H
+#define MEASUREMENT_KIT_MKCURL_MKCURL_H
 #ifdef __cplusplus
 #include <memory>
 extern "C" {
 #endif
 
-typedef struct mk_curlx_request mk_curlx_request_t;
+typedef struct mkcurl_request mkcurl_request_t;
 
-mk_curlx_request_t *mk_curlx_request_new(void);
+mkcurl_request_t *mkcurl_request_new(void);
 
-void mk_curlx_request_set_ca_path(mk_curlx_request_t *req, const char *p);
+void mkcurl_request_set_ca_path(mkcurl_request_t *req, const char *p);
 
-void mk_curlx_request_enable_http2(mk_curlx_request_t *req);
+void mkcurl_request_enable_http2(mkcurl_request_t *req);
 
-void mk_curlx_request_set_method_post(mk_curlx_request_t *req);
+void mkcurl_request_set_method_post(mkcurl_request_t *req);
 
-void mk_curlx_request_set_url(mk_curlx_request_t *req, const char *u);
+void mkcurl_request_set_url(mkcurl_request_t *req, const char *u);
 
-void mk_curlx_request_add_header(mk_curlx_request_t *req, const char *h);
+void mkcurl_request_add_header(mkcurl_request_t *req, const char *h);
 
-void mk_curlx_request_set_body(mk_curlx_request_t *req, const char *b);
+void mkcurl_request_set_body(mkcurl_request_t *req, const char *b);
 
-void mk_curlx_request_set_timeout(mk_curlx_request_t *req, int timeout);
+void mkcurl_request_set_timeout(mkcurl_request_t *req, int timeout);
 
-void mk_curlx_request_set_proxy_url(mk_curlx_request_t *req, const char *u);
+void mkcurl_request_set_proxy_url(mkcurl_request_t *req, const char *u);
 
-void mk_curlx_request_enable_follow_redirect(mk_curlx_request_t *req);
+void mkcurl_request_enable_follow_redirect(mkcurl_request_t *req);
 
-void mk_curlx_request_delete(mk_curlx_request_t *req);
+void mkcurl_request_delete(mkcurl_request_t *req);
 
-typedef struct mk_curlx_response mk_curlx_response_t;
+typedef struct mkcurl_response mkcurl_response_t;
 
-int mk_curlx_response_get_error(mk_curlx_response_t *res);
+int mkcurl_response_get_error(mkcurl_response_t *res);
 
-const char *mk_curlx_response_get_redirect_url(mk_curlx_response_t *res);
+const char *mkcurl_response_get_redirect_url(mkcurl_response_t *res);
 
-int mk_curlx_response_get_status_code(mk_curlx_response_t *res);
+int mkcurl_response_get_status_code(mkcurl_response_t *res);
 
-const char *mk_curlx_response_get_body(mk_curlx_response_t *res);
+const char *mkcurl_response_get_body(mkcurl_response_t *res);
 
-double mk_curlx_response_get_bytes_sent(mk_curlx_response_t *res);
+double mkcurl_response_get_bytes_sent(mkcurl_response_t *res);
 
-double mk_curlx_response_get_bytes_recv(mk_curlx_response_t *res);
+double mkcurl_response_get_bytes_recv(mkcurl_response_t *res);
 
-const char *mk_curlx_response_get_logs(mk_curlx_response_t *res);
+const char *mkcurl_response_get_logs(mkcurl_response_t *res);
 
-const char *mk_curlx_response_get_request_headers(mk_curlx_response_t *res);
+const char *mkcurl_response_get_request_headers(mkcurl_response_t *res);
 
-const char *mk_curlx_response_get_response_headers(mk_curlx_response_t *res);
+const char *mkcurl_response_get_response_headers(mkcurl_response_t *res);
 
-const char *mk_curlx_response_get_certificate_chain(mk_curlx_response_t *res);
+const char *mkcurl_response_get_certificate_chain(mkcurl_response_t *res);
 
-void mk_curlx_response_delete(mk_curlx_response_t *res);
+void mkcurl_response_delete(mkcurl_response_t *res);
 
-mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req);
+mkcurl_response_t *mkcurl_perform(const mkcurl_request_t *req);
 
 #ifdef __cplusplus
 }  // extern "C"
 
-struct mk_curlx_request_deleter {
-  void operator()(mk_curlx_request_t *req) {
-    mk_curlx_request_delete(req);
+struct mkcurl_request_deleter {
+  void operator()(mkcurl_request_t *req) {
+    mkcurl_request_delete(req);
   }
 };
 
-using mk_curlx_request_uptr = std::unique_ptr<mk_curlx_request_t,
-                                              mk_curlx_request_deleter>;
+using mkcurl_request_uptr = std::unique_ptr<mkcurl_request_t,
+                                              mkcurl_request_deleter>;
 
-struct mk_curlx_response_deleter {
-  void operator()(mk_curlx_response_t *req) {
-    mk_curlx_response_delete(req);
+struct mkcurl_response_deleter {
+  void operator()(mkcurl_response_t *req) {
+    mkcurl_response_delete(req);
   }
 };
 
-using mk_curlx_response_uptr = std::unique_ptr<mk_curlx_response_t,
-                                               mk_curlx_response_deleter>;
+using mkcurl_response_uptr = std::unique_ptr<mkcurl_response_t,
+                                               mkcurl_response_deleter>;
 
-#ifdef MK_CURLX_INLINE_IMPL
+#ifdef MKCURL_INLINE_IMPL
 
 #include <assert.h>
 
@@ -86,7 +86,7 @@ using mk_curlx_response_uptr = std::unique_ptr<mk_curlx_response_t,
 
 #include <curl/curl.h>
 
-struct mk_curlx_request {
+struct mkcurl_request {
   std::string ca_path;
   bool enable_http2 = false;
   bool method_post = false;
@@ -98,51 +98,51 @@ struct mk_curlx_request {
   bool follow_redir = false;
 };
 
-mk_curlx_request_t *mk_curlx_request_new() {
-  return new mk_curlx_request_t{};
+mkcurl_request_t *mkcurl_request_new() {
+  return new mkcurl_request_t{};
 }
 
-void mk_curlx_request_set_ca_path(mk_curlx_request_t *req, const char *p) {
+void mkcurl_request_set_ca_path(mkcurl_request_t *req, const char *p) {
   if (req != nullptr && p != nullptr) req->ca_path = p;
 }
 
-void mk_curlx_request_enable_http2(mk_curlx_request_t *req) {
+void mkcurl_request_enable_http2(mkcurl_request_t *req) {
   if (req != nullptr) req->enable_http2 = true;
 }
 
-void mk_curlx_request_set_method_post(mk_curlx_request_t *req) {
+void mkcurl_request_set_method_post(mkcurl_request_t *req) {
   if (req != nullptr) req->method_post = true;
 }
 
-void mk_curlx_request_set_url(mk_curlx_request_t *req, const char *u) {
+void mkcurl_request_set_url(mkcurl_request_t *req, const char *u) {
   if (req != nullptr && u != nullptr) req->url = u;
 }
 
-void mk_curlx_request_add_header(mk_curlx_request_t *req, const char *h) {
+void mkcurl_request_add_header(mkcurl_request_t *req, const char *h) {
   if (req != nullptr && h != nullptr) {
     req->headers.push_back(h);
   }
 }
 
-void mk_curlx_request_set_body(mk_curlx_request_t *req, const char *b) {
+void mkcurl_request_set_body(mkcurl_request_t *req, const char *b) {
   if (req != nullptr && b != nullptr) req->body = b;
 }
 
-void mk_curlx_request_set_timeout(mk_curlx_request_t *req, int timeout) {
+void mkcurl_request_set_timeout(mkcurl_request_t *req, int timeout) {
   if (req != nullptr) req->timeout = timeout;
 }
 
-void mk_curlx_request_set_proxy_url(mk_curlx_request_t *req, const char *u) {
+void mkcurl_request_set_proxy_url(mkcurl_request_t *req, const char *u) {
   if (req != nullptr && u != nullptr) req->proxy_url = u;
 }
 
-void mk_curlx_request_enable_follow_redirect(mk_curlx_request_t *req) {
+void mkcurl_request_enable_follow_redirect(mkcurl_request_t *req) {
   if (req != nullptr) req->follow_redir = true;
 }
 
-void mk_curlx_request_delete(mk_curlx_request_t *req) { delete req; }
+void mkcurl_request_delete(mkcurl_request_t *req) { delete req; }
 
-struct mk_curlx_response {
+struct mkcurl_response {
   int error = CURLE_OK;
   std::string redirect_url;
   int status_code = 0;
@@ -155,95 +155,95 @@ struct mk_curlx_response {
   std::string certs;
 };
 
-int mk_curlx_response_get_error(mk_curlx_response_t *res) {
+int mkcurl_response_get_error(mkcurl_response_t *res) {
   return (res != nullptr) ? res->error : CURLE_OK;
 }
 
-const char *mk_curlx_response_get_redirect_url(mk_curlx_response_t *res) {
+const char *mkcurl_response_get_redirect_url(mkcurl_response_t *res) {
   return (res != nullptr) ? res->redirect_url.c_str() : "";
 }
 
-int mk_curlx_response_get_status_code(mk_curlx_response_t *res) {
+int mkcurl_response_get_status_code(mkcurl_response_t *res) {
   return (res != nullptr) ? res->status_code : 200;
 }
 
-const char *mk_curlx_response_get_body(mk_curlx_response_t *res) {
+const char *mkcurl_response_get_body(mkcurl_response_t *res) {
   return (res != nullptr) ? res->body.c_str() : "";
 }
 
-double mk_curlx_response_get_bytes_sent(mk_curlx_response_t *res) {
+double mkcurl_response_get_bytes_sent(mkcurl_response_t *res) {
   return (res != nullptr) ? res->bytes_sent : 0.0;
 }
 
-double mk_curlx_response_get_bytes_recv(mk_curlx_response_t *res) {
+double mkcurl_response_get_bytes_recv(mkcurl_response_t *res) {
   return (res != nullptr) ? res->bytes_recv : 0.0;
 }
 
-const char *mk_curlx_response_get_logs(mk_curlx_response_t *res) {
+const char *mkcurl_response_get_logs(mkcurl_response_t *res) {
   return (res != nullptr) ? res->logs.c_str() : "";
 }
 
-const char *mk_curlx_response_get_request_headers(mk_curlx_response_t *res) {
+const char *mkcurl_response_get_request_headers(mkcurl_response_t *res) {
   return (res != nullptr) ? res->request_headers.c_str() : "";
 }
 
-const char *mk_curlx_response_get_response_headers(mk_curlx_response_t *res) {
+const char *mkcurl_response_get_response_headers(mkcurl_response_t *res) {
   return (res != nullptr) ? res->response_headers.c_str() : "";
 }
 
-const char *mk_curlx_response_get_certificate_chain(mk_curlx_response_t *res) {
+const char *mkcurl_response_get_certificate_chain(mkcurl_response_t *res) {
   return (res != nullptr) ? res->certs.c_str() : "";
 }
 
-void mk_curlx_response_delete(mk_curlx_response_t *res) { delete res; }
+void mkcurl_response_delete(mkcurl_response_t *res) { delete res; }
 
-// mk_curlx_deleter is a custom deleter for a CURL handle.
-struct mk_curlx_deleter {
+// mkcurl_deleter is a custom deleter for a CURL handle.
+struct mkcurl_deleter {
   void operator()(CURL *handle) { curl_easy_cleanup(handle); }
 };
 
-// mk_curlx_uptr is a unique pointer to a CURL handle.
-using mk_curlx_uptr = std::unique_ptr<CURL, mk_curlx_deleter>;
+// mkcurl_uptr is a unique pointer to a CURL handle.
+using mkcurl_uptr = std::unique_ptr<CURL, mkcurl_deleter>;
 
-// mk_curlx_slist is a curl_slist with RAII semantic.
-struct curlx_slist {
-  curlx_slist() = default;
-  curlx_slist(const curlx_slist &) = delete;
-  curlx_slist &operator=(const curlx_slist &) = delete;
-  curlx_slist(curlx_slist &&) = delete;
-  curlx_slist &operator=(curlx_slist &&) = delete;
-  ~curlx_slist() { curl_slist_free_all(p); }
+// mkcurl_slist is a curl_slist with RAII semantic.
+struct mkcurl_slist {
+  mkcurl_slist() = default;
+  mkcurl_slist(const mkcurl_slist &) = delete;
+  mkcurl_slist &operator=(const mkcurl_slist &) = delete;
+  mkcurl_slist(mkcurl_slist &&) = delete;
+  mkcurl_slist &operator=(mkcurl_slist &&) = delete;
+  ~mkcurl_slist() { curl_slist_free_all(p); }
   curl_slist *p = nullptr;
 };
 
-#ifndef MK_CURLX_EASY_INIT
-// MK_CURLX_EASY_INIT allows to mock curl_easy_init
-#define MK_CURLX_EASY_INIT curl_easy_init
+#ifndef MKCURL_EASY_INIT
+// MKCURL_EASY_INIT allows to mock curl_easy_init
+#define MKCURL_EASY_INIT curl_easy_init
 #endif
 
-#ifndef MK_CURLX_SLIST_APPEND
-// MK_CURLX_SLIST_APPEND allows to mock curl_slist_append
-#define MK_CURLX_SLIST_APPEND curl_slist_append
+#ifndef MKCURL_SLIST_APPEND
+// MKCURL_SLIST_APPEND allows to mock curl_slist_append
+#define MKCURL_SLIST_APPEND curl_slist_append
 #endif
 
-#ifndef MK_CURLX_EASY_SETOPT
-// MK_CURLX_EASY_SETOPT allows to mock curl_easy_setopt
-#define MK_CURLX_EASY_SETOPT curl_easy_setopt
+#ifndef MKCURL_EASY_SETOPT
+// MKCURL_EASY_SETOPT allows to mock curl_easy_setopt
+#define MKCURL_EASY_SETOPT curl_easy_setopt
 #endif
 
-#ifndef MK_CURLX_EASY_PERFORM
-// MK_CURLX_EASY_PERFORM allows to mock curl_easy_perform
-#define MK_CURLX_EASY_PERFORM curl_easy_perform
+#ifndef MKCURL_EASY_PERFORM
+// MKCURL_EASY_PERFORM allows to mock curl_easy_perform
+#define MKCURL_EASY_PERFORM curl_easy_perform
 #endif
 
-#ifndef MK_CURLX_EASY_GETINFO
-// MK_CURLX_EASY_GETINFO allows to mock curl_easy_getinfo
-#define MK_CURLX_EASY_GETINFO curl_easy_getinfo
+#ifndef MKCURL_EASY_GETINFO
+// MKCURL_EASY_GETINFO allows to mock curl_easy_getinfo
+#define MKCURL_EASY_GETINFO curl_easy_getinfo
 #endif
 
 extern "C" {
 
-static size_t mk_curlx_body_cb(
+static size_t mkcurl_body_cb(
     char *ptr, size_t size, size_t nmemb, void *userdata) noexcept {
   if (nmemb <= 0) {
     return 0;  // This means "no body"
@@ -253,7 +253,7 @@ static size_t mk_curlx_body_cb(
     return 0;
   }
   auto realsiz = size * nmemb;  // Overflow or zero not possible (see above)
-  auto res = static_cast<mk_curlx_response_t *>(userdata);
+  auto res = static_cast<mkcurl_response_t *>(userdata);
   res->body += std::string{ptr, realsiz};
   // From fwrite(3): "[the return value] equals the number of bytes
   // written _only_ when `size` equals `1`". See also
@@ -261,13 +261,13 @@ static size_t mk_curlx_body_cb(
   return nmemb;
 }
 
-static int mk_curlx_debug_cb(CURL *handle,
+static int mkcurl_debug_cb(CURL *handle,
                              curl_infotype type,
                              char *data,
                              size_t size,
                              void *userptr) {
   (void)handle;
-  auto res = static_cast<mk_curlx_response_t *>(userptr);
+  auto res = static_cast<mkcurl_response_t *>(userptr);
 
   auto log_many_lines = [&](std::string prefix, const std::string &str) {
     std::stringstream ss;
@@ -370,113 +370,113 @@ static int mk_curlx_debug_cb(CURL *handle,
 // 2. Allow to disable CURLOPT_SSL_VERIFYHOST
 //
 // 3. Allow to set a specific SSL version with CURLOPT_SSLVERSION
-mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
+mkcurl_response_t *mkcurl_perform(const mkcurl_request_t *req) {
   if (req == nullptr) return nullptr;
-  mk_curlx_response_uptr res{new mk_curlx_response_t{}};
-  mk_curlx_uptr handle{MK_CURLX_EASY_INIT()};
+  mkcurl_response_uptr res{new mkcurl_response_t{}};
+  mkcurl_uptr handle{MKCURL_EASY_INIT()};
   if (!handle) {
     res->error = CURLE_OUT_OF_MEMORY;
     res->logs += "curl_easy_init() failed\n";
     return res.release();
   }
-  curlx_slist headers;
+  mkcurl_slist headers;
   for (auto &s : req->headers) {
-    if ((headers.p = MK_CURLX_SLIST_APPEND(headers.p, s.c_str())) == nullptr) {
+    if ((headers.p = MKCURL_SLIST_APPEND(headers.p, s.c_str())) == nullptr) {
       res->error = CURLE_OUT_OF_MEMORY;
       res->logs += "curl_slist_append() failed\n";
       return res.release();
     }
   }
   if (!req->ca_path.empty() &&
-      (res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_CAINFO,
+      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_CAINFO,
                                          req->ca_path.c_str())) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_CAINFO) failed\n";
     return res.release();
   }
   if (req->enable_http2 == true &&
-      (res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_HTTP_VERSION,
+      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_HTTP_VERSION,
                                          CURL_HTTP_VERSION_2_0)) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_HTTP_VERSION) failed\n";
     return res.release();
   }
   if (headers.p != nullptr &&
-      (res->error = MK_CURLX_EASY_SETOPT(
+      (res->error = MKCURL_EASY_SETOPT(
            handle.get(), CURLOPT_HTTPHEADER, headers.p)) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_HTTPHEADER) failed\n";
     return res.release();
   }
   if (!req->body.empty() && req->method_post == true &&
-      (res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_POSTFIELDS,
+      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_POSTFIELDS,
                                          req->body.c_str())) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_POSTFIELDS) failed\n";
     return res.release();
   }
   if (req->method_post == true &&
-      (res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_POST,
+      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_POST,
                                          1L)) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_POST) failed\n";
     return res.release();
   }
-  if ((res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_URL,
+  if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_URL,
                                          req->url.c_str())) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_URL) failed\n";
     return res.release();
   }
-  if ((res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_WRITEFUNCTION,
-                                         mk_curlx_body_cb)) != CURLE_OK) {
+  if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_WRITEFUNCTION,
+                                         mkcurl_body_cb)) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_WRITEFUNCTION) failed\n";
     return res.release();
   }
-  if ((res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_WRITEDATA,
+  if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_WRITEDATA,
                                          res.get())) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_WRITEDATA) failed\n";
     return res.release();
   }
   if (req->timeout > 0 &&
-      (res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_TIMEOUT,
+      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_TIMEOUT,
                                          req->timeout)) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_TIMEOUT) failed\n";
     return res.release();
   }
-  if ((res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_DEBUGFUNCTION,
-                                         mk_curlx_debug_cb)) != CURLE_OK) {
+  if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_DEBUGFUNCTION,
+                                         mkcurl_debug_cb)) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_DEBUGFUNCTION) failed\n";
     return res.release();
   }
-  if ((res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_DEBUGDATA,
+  if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_DEBUGDATA,
                                          res.get())) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_DEBUGDATA) failed\n";
     return res.release();
   }
-  if ((res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_VERBOSE,
+  if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_VERBOSE,
                                          1L)) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_VERBOSE) failed\n";
     return res.release();
   }
   if (!req->proxy_url.empty() &&
-      (res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_PROXY,
+      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_PROXY,
                                          req->proxy_url.c_str())) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_PROXY) failed\n";
     return res.release();
   }
   if (req->follow_redir == true &&
-      (res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_FOLLOWLOCATION,
+      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_FOLLOWLOCATION,
                                          1L)) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_FOLLOWLOCATION) failed\n";
     return res.release();
   }
-  if ((res->error = MK_CURLX_EASY_SETOPT(handle.get(), CURLOPT_CERTINFO,
+  if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_CERTINFO,
                                          1L)) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_CERTINFO) failed\n";
     return res.release();
   }
-  if ((res->error = MK_CURLX_EASY_PERFORM(handle.get())) != CURLE_OK) {
+  if ((res->error = MKCURL_EASY_PERFORM(handle.get())) != CURLE_OK) {
     res->logs += "curl_easy_perform() failed\n";
     return res.release();
   }
   {
     long status_code = 0;
-    if ((res->error = MK_CURLX_EASY_GETINFO(
+    if ((res->error = MKCURL_EASY_GETINFO(
              handle.get(), CURLINFO_RESPONSE_CODE, &status_code)) != CURLE_OK) {
       res->logs += "curl_easy_getinfo(CURLINFO_RESPONSE_CODE) failed\n";
       return res.release();
@@ -491,7 +491,7 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
   }
   {
     char *url = nullptr;
-    if ((res->error = MK_CURLX_EASY_GETINFO(
+    if ((res->error = MKCURL_EASY_GETINFO(
              handle.get(), CURLINFO_REDIRECT_URL, &url)) != CURLE_OK) {
       res->logs += "curl_easy_getinfo(CURLINFO_REDIRECT_URL) failed\n";
       return res.release();
@@ -500,7 +500,7 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
   }
   {
     curl_certinfo *certinfo = nullptr;
-    if ((res->error = MK_CURLX_EASY_GETINFO(
+    if ((res->error = MKCURL_EASY_GETINFO(
              handle.get(), CURLINFO_CERTINFO, &certinfo)) != CURLE_OK) {
       res->logs += "curl_easy_getinfo(CURLINFO_CERTINFO) failed\n";
       return res.release();
@@ -528,6 +528,6 @@ mk_curlx_response_t *mk_curlx_perform(const mk_curlx_request_t *req) {
   return res.release();
 }
 
-#endif  // MK_CURLX_INLINE_IMPL
+#endif  // MKCURL_INLINE_IMPL
 #endif  // __cplusplus
-#endif  // MEASUREMENT_KIT_LIBCURLX_LIBCURLX_H
+#endif  // MEASUREMENT_KIT_MKCURL_MKCURL_H
