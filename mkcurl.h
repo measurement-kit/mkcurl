@@ -1,6 +1,8 @@
 #ifndef MKCURL_MKCURL_H
 #define MKCURL_MKCURL_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,7 +23,7 @@ void mkcurl_request_add_header(mkcurl_request_t *req, const char *h);
 
 void mkcurl_request_set_body(mkcurl_request_t *req, const char *b);
 
-void mkcurl_request_set_timeout(mkcurl_request_t *req, int timeout);
+void mkcurl_request_set_timeout(mkcurl_request_t *req, int64_t timeout);
 
 void mkcurl_request_set_proxy_url(mkcurl_request_t *req, const char *u);
 
@@ -31,11 +33,11 @@ void mkcurl_request_delete(mkcurl_request_t *req);
 
 typedef struct mkcurl_response mkcurl_response_t;
 
-int mkcurl_response_get_error(mkcurl_response_t *res);
+int64_t mkcurl_response_get_error(mkcurl_response_t *res);
 
 const char *mkcurl_response_get_redirect_url(mkcurl_response_t *res);
 
-int mkcurl_response_get_status_code(mkcurl_response_t *res);
+int64_t mkcurl_response_get_status_code(mkcurl_response_t *res);
 
 const char *mkcurl_response_get_body(mkcurl_response_t *res);
 
@@ -95,7 +97,7 @@ struct mkcurl_request {
   std::string url;
   std::vector<std::string> headers;
   std::string body;
-  int timeout = 30 /* seconds */;
+  long timeout = 30 /* seconds (same unit and type width as CURL) */;
   std::string proxy_url;
   bool follow_redir = false;
 };
@@ -130,8 +132,14 @@ void mkcurl_request_set_body(mkcurl_request_t *req, const char *b) {
   if (req != nullptr && b != nullptr) req->body = b;
 }
 
-void mkcurl_request_set_timeout(mkcurl_request_t *req, int timeout) {
-  if (req != nullptr) req->timeout = timeout;
+void mkcurl_request_set_timeout(mkcurl_request_t *req, int64_t timeout) {
+  if (req != nullptr) {
+    req->timeout = (long)((timeout < 0)
+                              ? 0  // which, for CURL means infinite
+                              : (timeout < INT16_MAX)
+                                    ? timeout      // it's in range
+                                    : INT16_MAX);  // too many seconds already
+  }
 }
 
 void mkcurl_request_set_proxy_url(mkcurl_request_t *req, const char *u) {
@@ -145,9 +153,9 @@ void mkcurl_request_enable_follow_redirect(mkcurl_request_t *req) {
 void mkcurl_request_delete(mkcurl_request_t *req) { delete req; }
 
 struct mkcurl_response {
-  int error = CURLE_OK;
+  int64_t error = CURLE_OK;  // In CURL is an enum, hence has int width
   std::string redirect_url;
-  int status_code = 0;
+  int64_t status_code = 0;   // In CURL is a long, hence <= width
   std::string body;
   double bytes_sent = 0.0;
   double bytes_recv = 0.0;
@@ -157,7 +165,7 @@ struct mkcurl_response {
   std::string certs;
 };
 
-int mkcurl_response_get_error(mkcurl_response_t *res) {
+int64_t mkcurl_response_get_error(mkcurl_response_t *res) {
   return (res != nullptr) ? res->error : CURLE_OK;
 }
 
@@ -165,7 +173,7 @@ const char *mkcurl_response_get_redirect_url(mkcurl_response_t *res) {
   return (res != nullptr) ? res->redirect_url.c_str() : "";
 }
 
-int mkcurl_response_get_status_code(mkcurl_response_t *res) {
+int64_t mkcurl_response_get_status_code(mkcurl_response_t *res) {
   return (res != nullptr) ? res->status_code : 200;
 }
 
