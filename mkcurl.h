@@ -33,25 +33,25 @@ void mkcurl_request_delete(mkcurl_request_t *req);
 
 typedef struct mkcurl_response mkcurl_response_t;
 
-int64_t mkcurl_response_get_error(mkcurl_response_t *res);
+int64_t mkcurl_response_get_error(const mkcurl_response_t *res);
 
-const char *mkcurl_response_get_redirect_url(mkcurl_response_t *res);
+const char *mkcurl_response_get_redirect_url(const mkcurl_response_t *res);
 
-int64_t mkcurl_response_get_status_code(mkcurl_response_t *res);
+int64_t mkcurl_response_get_status_code(const mkcurl_response_t *res);
 
-const char *mkcurl_response_get_body(mkcurl_response_t *res);
+const char *mkcurl_response_get_body(const mkcurl_response_t *res);
 
-double mkcurl_response_get_bytes_sent(mkcurl_response_t *res);
+double mkcurl_response_get_bytes_sent(const mkcurl_response_t *res);
 
-double mkcurl_response_get_bytes_recv(mkcurl_response_t *res);
+double mkcurl_response_get_bytes_recv(const mkcurl_response_t *res);
 
-const char *mkcurl_response_get_logs(mkcurl_response_t *res);
+const char *mkcurl_response_get_logs(const mkcurl_response_t *res);
 
-const char *mkcurl_response_get_request_headers(mkcurl_response_t *res);
+const char *mkcurl_response_get_request_headers(const mkcurl_response_t *res);
 
-const char *mkcurl_response_get_response_headers(mkcurl_response_t *res);
+const char *mkcurl_response_get_response_headers(const mkcurl_response_t *res);
 
-const char *mkcurl_response_get_certificate_chain(mkcurl_response_t *res);
+const char *mkcurl_response_get_certificate_chain(const mkcurl_response_t *res);
 
 void mkcurl_response_delete(mkcurl_response_t *res);
 
@@ -69,7 +69,7 @@ struct mkcurl_request_deleter {
 };
 
 using mkcurl_request_uptr = std::unique_ptr<mkcurl_request_t,
-                                              mkcurl_request_deleter>;
+                                            mkcurl_request_deleter>;
 
 struct mkcurl_response_deleter {
   void operator()(mkcurl_response_t *req) {
@@ -78,7 +78,7 @@ struct mkcurl_response_deleter {
 };
 
 using mkcurl_response_uptr = std::unique_ptr<mkcurl_response_t,
-                                               mkcurl_response_deleter>;
+                                             mkcurl_response_deleter>;
 
 #ifdef MKCURL_INLINE_IMPL
 
@@ -165,43 +165,44 @@ struct mkcurl_response {
   std::string certs;
 };
 
-int64_t mkcurl_response_get_error(mkcurl_response_t *res) {
+int64_t mkcurl_response_get_error(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->error : CURLE_OK;
 }
 
-const char *mkcurl_response_get_redirect_url(mkcurl_response_t *res) {
+const char *mkcurl_response_get_redirect_url(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->redirect_url.c_str() : "";
 }
 
-int64_t mkcurl_response_get_status_code(mkcurl_response_t *res) {
+int64_t mkcurl_response_get_status_code(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->status_code : 200;
 }
 
-const char *mkcurl_response_get_body(mkcurl_response_t *res) {
+const char *mkcurl_response_get_body(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->body.c_str() : "";
 }
 
-double mkcurl_response_get_bytes_sent(mkcurl_response_t *res) {
+double mkcurl_response_get_bytes_sent(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->bytes_sent : 0.0;
 }
 
-double mkcurl_response_get_bytes_recv(mkcurl_response_t *res) {
+double mkcurl_response_get_bytes_recv(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->bytes_recv : 0.0;
 }
 
-const char *mkcurl_response_get_logs(mkcurl_response_t *res) {
+const char *mkcurl_response_get_logs(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->logs.c_str() : "";
 }
 
-const char *mkcurl_response_get_request_headers(mkcurl_response_t *res) {
+const char *mkcurl_response_get_request_headers(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->request_headers.c_str() : "";
 }
 
-const char *mkcurl_response_get_response_headers(mkcurl_response_t *res) {
+const char *mkcurl_response_get_response_headers(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->response_headers.c_str() : "";
 }
 
-const char *mkcurl_response_get_certificate_chain(mkcurl_response_t *res) {
+const char *mkcurl_response_get_certificate_chain(
+    const mkcurl_response_t *res) {
   return (res != nullptr) ? res->certs.c_str() : "";
 }
 
@@ -272,10 +273,10 @@ static size_t mkcurl_body_cb(
 }
 
 static int mkcurl_debug_cb(CURL *handle,
-                             curl_infotype type,
-                             char *data,
-                             size_t size,
-                             void *userptr) {
+                           curl_infotype type,
+                           char *data,
+                           size_t size,
+                           void *userptr) {
   (void)handle;
   auto res = static_cast<mkcurl_response_t *>(userptr);
 
