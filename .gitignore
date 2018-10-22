@@ -21,11 +21,11 @@
 /catch.hpp
 /cmake_install.cmake
 /install_manifest.txt
-/libcurlx-client
-/libcurlx-client.dir/
-/libcurlx-client.vcxproj
-/libcurlx-client.vcxproj.filters
-/libcurlx.sln
+/mkcurl-client
+/mkcurl-client.dir/
+/mkcurl-client.vcxproj
+/mkcurl-client.vcxproj.filters
+/mkcurl.sln
 /rules.ninja
 /unit-tests
 /unit-tests.dir/

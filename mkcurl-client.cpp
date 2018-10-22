@@ -5,8 +5,8 @@
 #include <iostream>
 #include <sstream>
 
-#define MK_CURLX_INLINE_IMPL
-#include "libcurlx.h"
+#define MKCURL_INLINE_IMPL
+#include "mkcurl.h"
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -21,7 +21,7 @@
 static void usage() {
   // clang-format off
   std::clog << "\n";
-  std::clog << "Usage: libcurlx-client [options] <url>\n";
+  std::clog << "Usage: mkcurl-client [options] <url>\n";
   std::clog << "\n";
   std::clog << "Options can start with either a single dash (i.e. -option) or\n";
   std::clog << "a double dash (i.e. --option). Available options:\n";
@@ -38,61 +38,61 @@ static void usage() {
 }
 // LCOV_EXCL_STOP
 
-static void summary(const mk_curlx_response_uptr &res) {
+static void summary(const mkcurl_response_uptr &res) {
   std::clog << "=== BEGIN SUMMARY ==="
             << std::endl
             << "CURL error code: "
-            << mk_curlx_response_get_error(res.get())
+            << mkcurl_response_get_error(res.get())
             << std::endl
             << "HTTP status code: "
-            << mk_curlx_response_get_status_code(res.get())
+            << mkcurl_response_get_status_code(res.get())
             << std::endl
             << "Bytes sent: "
-            << mk_curlx_response_get_bytes_sent(res.get())
+            << mkcurl_response_get_bytes_sent(res.get())
             << std::endl
             << "Bytes recv: "
-            << mk_curlx_response_get_bytes_recv(res.get())
+            << mkcurl_response_get_bytes_recv(res.get())
             << std::endl
             << "Redirect URL: "
-            << mk_curlx_response_get_redirect_url(res.get())
+            << mkcurl_response_get_redirect_url(res.get())
             << std::endl
             << "=== END SUMMARY ==="
             << std::endl
             << std::endl;
   std::clog << "=== BEGIN REQUEST HEADERS ==="
             << std::endl
-            << mk_curlx_response_get_request_headers(res.get())
+            << mkcurl_response_get_request_headers(res.get())
             << "=== END REQUEST HEADERS ==="
             << std::endl
             << std::endl;
   std::clog << "=== BEGIN RESPONSE HEADERS ==="
             << std::endl
-            << mk_curlx_response_get_response_headers(res.get())
+            << mkcurl_response_get_response_headers(res.get())
             << "=== END RESPONSE HEADERS ==="
             << std::endl
             << std::endl;
   std::clog << "=== BEGIN CERTIFICATE CHAIN ==="
             << std::endl
-            << mk_curlx_response_get_certificate_chain(res.get())
+            << mkcurl_response_get_certificate_chain(res.get())
             << "=== END CERTIFICATE CHAIN ==="
             << std::endl
             << std::endl;
   std::clog << "=== BEGIN LOGS ==="
             << std::endl
-            << mk_curlx_response_get_logs(res.get())
+            << mkcurl_response_get_logs(res.get())
             << "=== END LOGS ==="
             << std::endl
             << std::endl;
   std::clog << "=== BEGIN BODY ==="
             << std::endl
-            << mk_curlx_response_get_body(res.get())
+            << mkcurl_response_get_body(res.get())
             << "=== END BODY ==="
             << std::endl
             << std::endl;
 }
 
 int main(int, char **argv) {
-  mk_curlx_request_uptr req{mk_curlx_request_new()};
+  mkcurl_request_uptr req{mkcurl_request_new()};
   if (!req) {
     std::clog << "Out of memory" << std::endl;
     exit(EXIT_FAILURE);
@@ -105,11 +105,11 @@ int main(int, char **argv) {
     cmdline.parse(argv);
     for (auto &flag : cmdline.flags()) {
       if (flag == "enable-http2") {
-        mk_curlx_request_enable_http2(req.get());
+        mkcurl_request_enable_http2(req.get());
       } else if (flag == "follow-redirect") {
-        mk_curlx_request_enable_follow_redirect(req.get());
+        mkcurl_request_enable_follow_redirect(req.get());
       } else if (flag == "post") {
-        mk_curlx_request_set_method_post(req.get());
+        mkcurl_request_set_method_post(req.get());
       } else {
         std::clog << "fatal: unrecognized flag: " << flag << std::endl;
         usage();
@@ -118,17 +118,17 @@ int main(int, char **argv) {
     }
     for (auto &param : cmdline.params()) {
       if (param.first == "ca-bundle-path") {
-        mk_curlx_request_set_ca_path(req.get(), param.second.c_str());
+        mkcurl_request_set_ca_bundle_path(req.get(), param.second.c_str());
       } else if (param.first == "header") {
-        mk_curlx_request_add_header(req.get(), param.second.c_str());
+        mkcurl_request_add_header(req.get(), param.second.c_str());
       } else if (param.first == "post-data") {
-        mk_curlx_request_set_body(req.get(), param.second.c_str());
+        mkcurl_request_set_body(req.get(), param.second.c_str());
       } else if (param.first == "timeout") {
         // Implementation note: since this is meant to be just a testing
         // client, we don't bother with properly validating the number that
         // is passed here and we just use atoi(). A really robust client
         // SHOULD instead use strtonum().
-        mk_curlx_request_set_timeout(req.get(), atoi(param.second.c_str()));
+        mkcurl_request_set_timeout(req.get(), atoi(param.second.c_str()));
       } else {
         std::clog << "fatal: unrecognized param: " << param.first << std::endl;
         usage();
@@ -140,16 +140,16 @@ int main(int, char **argv) {
       usage();
       exit(EXIT_FAILURE);
     }
-    mk_curlx_request_set_url(req.get(), cmdline.pos_args()[1].c_str());
+    mkcurl_request_set_url(req.get(), cmdline.pos_args()[1].c_str());
   }
-  mk_curlx_response_uptr res{mk_curlx_perform(req.get())};
+  mkcurl_response_uptr res{mkcurl_perform(req.get())};
   if (!res) {
     std::clog << "Out of memory or really-bad internal error" << std::endl;
     exit(EXIT_FAILURE);
   }
   summary(res);
-  if (mk_curlx_response_get_error(res.get()) != CURLE_OK ||
-      mk_curlx_response_get_status_code(res.get()) != 200) {
+  if (mkcurl_response_get_error(res.get()) != CURLE_OK ||
+      mkcurl_response_get_status_code(res.get()) != 200) {
     std::clog << "FATAL: the request did not succeed" << std::endl;
     exit(EXIT_FAILURE);
   }
