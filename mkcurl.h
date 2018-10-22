@@ -11,7 +11,7 @@ typedef struct mkcurl_request mkcurl_request_t;
 
 mkcurl_request_t *mkcurl_request_new(void);
 
-void mkcurl_request_set_ca_path(mkcurl_request_t *req, const char *p);
+void mkcurl_request_set_ca_bundle_path(mkcurl_request_t *req, const char *p);
 
 void mkcurl_request_enable_http2(mkcurl_request_t *req);
 
@@ -106,7 +106,7 @@ mkcurl_request_t *mkcurl_request_new() {
   return new mkcurl_request_t{};
 }
 
-void mkcurl_request_set_ca_path(mkcurl_request_t *req, const char *p) {
+void mkcurl_request_set_ca_bundle_path(mkcurl_request_t *req, const char *p) {
   if (req != nullptr && p != nullptr) req->ca_path = p;
 }
 

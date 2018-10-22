@@ -118,7 +118,7 @@ int main(int, char **argv) {
     }
     for (auto &param : cmdline.params()) {
       if (param.first == "ca-bundle-path") {
-        mkcurl_request_set_ca_path(req.get(), param.second.c_str());
+        mkcurl_request_set_ca_bundle_path(req.get(), param.second.c_str());
       } else if (param.first == "header") {
         mkcurl_request_add_header(req.get(), param.second.c_str());
       } else if (param.first == "post-data") {

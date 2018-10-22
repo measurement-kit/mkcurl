@@ -139,7 +139,7 @@ struct MkCurlEasySetoptFailure : public MkCurlMock {
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_CAINFO,
     [](mkcurl_request_uptr &req) {
-      mkcurl_request_set_ca_path(req.get(), "/etc/ssl/cert.pem");
+      mkcurl_request_set_ca_bundle_path(req.get(), "/etc/ssl/cert.pem");
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
