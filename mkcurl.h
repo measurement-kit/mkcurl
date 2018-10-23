@@ -33,9 +33,9 @@ void mkcurl_request_add_header(mkcurl_request_t *req, const char *h);
 /// mkcurl_request_set_body sets the request body. Make sure you also use POST.
 void mkcurl_request_set_body(mkcurl_request_t *req, const char *b);
 
-/// mkcurl_request_set_body as a binary vector rather than as a string.
-void mkcurl_request_set_body_binary(mkcurl_request_t *req,
-                                    const uint8_t *b, uint64_t n);
+/// mkcurl_request_set_body_binary_v2 sets the body as a binary vector.
+void mkcurl_request_set_body_binary_v2(mkcurl_request_t *req,
+                                       const uint8_t *b, size_t n);
 
 /// mkcurl_request_set_timeout sets the request timeout. This is the time after
 /// which the request/response handling loop is interrupted. Setting zero or a
@@ -76,10 +76,10 @@ int64_t mkcurl_response_get_status_code(const mkcurl_response_t *res);
 /// return NULL in case of internal error.
 const char *mkcurl_response_get_body(const mkcurl_response_t *res);
 
-/// mkcurl_response_get_body returns the body as a binary vector. Returns
+/// mkcurl_response_get_body_v2 returns the body as a binary vector. Returns
 /// true on success and false on failure.
-int64_t mkcurl_response_get_body_binary(const mkcurl_response_t *res,
-                                        const uint8_t **p, uint64_t *n);
+int64_t mkcurl_response_get_body_binary_v2(const mkcurl_response_t *res,
+                                           const uint8_t **p, size_t *n);
 
 /// mkcurl_response_get_bytes_sent returns the bytes sent. Should be a positive
 /// number with the fractional part equal to zero.
@@ -94,10 +94,10 @@ double mkcurl_response_get_bytes_recv(const mkcurl_response_t *res);
 /// is a safer alternative. Could return NULL on error.
 const char *mkcurl_response_get_logs(const mkcurl_response_t *res);
 
-/// mkcurl_response_get_logs_binary returns the logs a binary vector. Returns
+/// mkcurl_response_get_logs_binary_v2 returns the logs a binary vector. Returns
 /// true on success and false on failure.
-int64_t mkcurl_response_get_logs_binary(const mkcurl_response_t *res,
-                                        const uint8_t **p, uint64_t *n);
+int64_t mkcurl_response_get_logs_binary_v2(const mkcurl_response_t *res,
+                                           const uint8_t **p, size_t *n);
 
 /// mkcurl_response_get_request_headers returns the request line and all the
 /// headers that were subsequently sent as part of the request. It may return
@@ -109,11 +109,11 @@ const char *mkcurl_response_get_request_headers(const mkcurl_response_t *res);
 /// NULL in case of internal errors.
 const char *mkcurl_response_get_response_headers(const mkcurl_response_t *res);
 
-/// mkcurl_response_get_response_headers_binary returns the response line
+/// mkcurl_response_get_response_headers_binary_v2 returns the response line
 /// and the headers as a binary vector. Returns true on sucess and false
 /// in case of failure.
-int64_t mkcurl_response_get_response_headers_binary(
-    const mkcurl_response_t *res, const uint8_t **p, uint64_t *n);
+int64_t mkcurl_response_get_response_headers_binary_v2(
+    const mkcurl_response_t *res, const uint8_t **p, size_t *n);
 
 /// mkcurl_response_get_certificate_chain returns the certificate chain as a
 /// string. It will look like a config file. There will be commented out lines
@@ -211,8 +211,8 @@ void mkcurl_request_set_body(mkcurl_request_t *req, const char *b) {
   if (req != nullptr && b != nullptr) req->body = b;
 }
 
-void mkcurl_request_set_body_binary(mkcurl_request_t *req,
-                                    const uint8_t *b, uint64_t n) {
+void mkcurl_request_set_body_binary_v2(mkcurl_request_t *req,
+                                       const uint8_t *b, size_t n) {
   if (req != nullptr && b != nullptr && n > 0) {
     req->body = std::string{(char *)b, n};
   }
@@ -267,11 +267,11 @@ const char *mkcurl_response_get_body(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->body.c_str() : "";
 }
 
-int64_t mkcurl_response_get_body_binary(const mkcurl_response_t *res,
-                                        const uint8_t **p, uint64_t *n) {
+int64_t mkcurl_response_get_body_binary_v2(const mkcurl_response_t *res,
+                                           const uint8_t **p, size_t *n) {
   if (res == nullptr || p == nullptr || n == nullptr) return false;
   *p = (const uint8_t *)res->body.c_str();
-  *n = (uint64_t)res->body.size();
+  *n = res->body.size();
   return true;
 }
 
@@ -287,11 +287,11 @@ const char *mkcurl_response_get_logs(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->logs.c_str() : "";
 }
 
-int64_t mkcurl_response_get_logs_binary(const mkcurl_response_t *res,
-                                        const uint8_t **p, uint64_t *n) {
+int64_t mkcurl_response_get_logs_binary_v2(const mkcurl_response_t *res,
+                                           const uint8_t **p, size_t *n) {
   if (res == nullptr || p == nullptr || n == nullptr) return false;
   *p = (const uint8_t *)res->logs.c_str();
-  *n = (uint64_t)res->logs.size();
+  *n = res->logs.size();
   return true;
 }
 
@@ -303,11 +303,11 @@ const char *mkcurl_response_get_response_headers(const mkcurl_response_t *res) {
   return (res != nullptr) ? res->response_headers.c_str() : "";
 }
 
-int64_t mkcurl_response_get_response_headers_binary(
-    const mkcurl_response_t *res, const uint8_t **p, uint64_t *n) {
+int64_t mkcurl_response_get_response_headers_binary_v2(
+    const mkcurl_response_t *res, const uint8_t **p, size_t *n) {
   if (res == nullptr || p == nullptr || n == nullptr) return false;
   *p = (const uint8_t *)res->response_headers.c_str();
-  *n = (uint64_t)res->response_headers.size();
+  *n = res->response_headers.size();
   return true;
 }
 
