@@ -252,7 +252,7 @@ struct mkcurl_response {
 };
 
 int64_t mkcurl_response_get_error(const mkcurl_response_t *res) {
-  return (res != nullptr) ? res->error : CURLE_OK;
+  return (res != nullptr) ? res->error : (int64_t)CURLE_OK;
 }
 
 const char *mkcurl_response_get_redirect_url(const mkcurl_response_t *res) {
