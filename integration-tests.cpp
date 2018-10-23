@@ -12,7 +12,7 @@ TEST_CASE("We can move in and move out possibly binary data") {
   mkcurl_request_set_url(
       request.get(), "https://bouncer.ooni.io/bouncer/net-tests");
   // clang-format off
-  std::string body = R"({
+  std::string request_body = R"({
     "net-tests":[{
       "input-hashes": null,
       "name":"http_invalid_request_line",
@@ -21,7 +21,7 @@ TEST_CASE("We can move in and move out possibly binary data") {
     }]
   })";
   // clang-format on
-  mkcurl_request_movein_body(request.get(), std::move(body));
+  mkcurl_request_movein_body(request.get(), std::move(request_body));
   mkcurl_response_uptr response{mkcurl_perform(request.get())};
   REQUIRE(response != nullptr);
   REQUIRE(mkcurl_response_get_status_code(response.get()) == 200);
