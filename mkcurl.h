@@ -1,5 +1,5 @@
-#ifndef MKCURL_MKCURL_H
-#define MKCURL_MKCURL_H
+#ifndef MEASUREMENT_KIT_MKCURL_H
+#define MEASUREMENT_KIT_MKCURL_H
 
 #include <stdint.h>
 
@@ -645,4 +645,4 @@ mkcurl_response_t *mkcurl_perform(const mkcurl_request_t *req) {
 
 #endif  // MKCURL_INLINE_IMPL
 #endif  // __cplusplus
-#endif  // MKCURL_MKCURL_H
+#endif  // MEASUREMENT_KIT_MKCURL_H
