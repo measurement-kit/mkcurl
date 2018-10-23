@@ -10,7 +10,7 @@ extern "C" {
 /// mkcurl_request_t is a HTTP request you send using CURL.
 typedef struct mkcurl_request mkcurl_request_t;
 
-/// mkcurl_request_new creates a new request object.
+/// mkcurl_request_new creates a new request object. May return NULL on error.
 mkcurl_request_t *mkcurl_request_new(void);
 
 /// mkcurl_request_set_ca_bundle_path sets the CA bundle path. Typically
@@ -64,58 +64,69 @@ typedef struct mkcurl_response mkcurl_response_t;
 int64_t mkcurl_response_get_error(const mkcurl_response_t *res);
 
 /// mkcurl_response_get_redirect_url returns the URL to which we were
-/// redirected, if redirection is enabled.
+/// redirected, if redirection is enabled. May return NULL on error.
 const char *mkcurl_response_get_redirect_url(const mkcurl_response_t *res);
 
-/// mkcurl_response_get_status_code returns the status code.
+/// mkcurl_response_get_status_code returns the status code. May return
+/// unreasonably large numbers in case of severe internal errors.
 int64_t mkcurl_response_get_status_code(const mkcurl_response_t *res);
 
 /// mkcurl_response_get_body returns the body as a C string. Since the body
-/// may be binary, mkcurl_response_get_body_binary is generally better.
+/// may be binary, mkcurl_response_get_body_binary is generally better. It may
+/// return NULL in case of internal error.
 const char *mkcurl_response_get_body(const mkcurl_response_t *res);
 
-/// mkcurl_response_get_body returns the body as a binary vector.
+/// mkcurl_response_get_body returns the body as a binary vector. Returns
+/// true on success and false on failure.
 int64_t mkcurl_response_get_body_binary(const mkcurl_response_t *res,
                                         const uint8_t **p, uint64_t *n);
 
-/// mkcurl_response_get_bytes_sent returns the bytes sent.
+/// mkcurl_response_get_bytes_sent returns the bytes sent. Should be a positive
+/// number with the fractional part equal to zero.
 double mkcurl_response_get_bytes_sent(const mkcurl_response_t *res);
 
-/// mkcurl_response_get_bytes_recv returns the bytes received.
+/// mkcurl_response_get_bytes_recv returns the bytes received. Should be a
+/// positive number with the fractional part equal to zero.
 double mkcurl_response_get_bytes_recv(const mkcurl_response_t *res);
 
 /// mkcurl_response_get_logs returns the logs produced while performing the
-/// request. Logs might be binary, because we could be logging binary data
-/// sent to use by the server, so consider also mkcurl_response_get_logs_binary.
+/// request. Logs might contain binary data, so mkcurl_response_get_logs_binary
+/// is a safer alternative. Could return NULL on error.
 const char *mkcurl_response_get_logs(const mkcurl_response_t *res);
 
-/// mkcurl_response_get_logs_binary returns the logs a binary vector.
+/// mkcurl_response_get_logs_binary returns the logs a binary vector. Returns
+/// true on success and false on failure.
 int64_t mkcurl_response_get_logs_binary(const mkcurl_response_t *res,
                                         const uint8_t **p, uint64_t *n);
 
 /// mkcurl_response_get_request_headers returns the request line and all the
-/// headers that were subsequently sent as part of the request.
+/// headers that were subsequently sent as part of the request. It may return
+/// NULL in case of internal errors.
 const char *mkcurl_response_get_request_headers(const mkcurl_response_t *res);
 
 /// mkcurl_response_get_response_headers returns the response line and all
-/// the headers subsequently sent as part of the response(s).
+/// the headers subsequently sent as part of the response(s). It may return
+/// NULL in case of internal errors.
 const char *mkcurl_response_get_response_headers(const mkcurl_response_t *res);
 
 /// mkcurl_response_get_response_headers_binary returns the response line
-/// and the headers as a binary vector.
+/// and the headers as a binary vector. Returns true on sucess and false
+/// in case of failure.
 int64_t mkcurl_response_get_response_headers_binary(
     const mkcurl_response_t *res, const uint8_t **p, uint64_t *n);
 
 /// mkcurl_response_get_certificate_chain returns the certificate chain as a
 /// string. It will look like a config file. There will be commented out lines
 /// indicating certificate properties. The only non-commented data will be
-/// the lines composing the BASE64 encoded certificate.:w
+/// the lines composing the BASE64 encoded certificate. There should be a
+/// empty line between each certificate. It may return NULL on error.
 const char *mkcurl_response_get_certificate_chain(const mkcurl_response_t *res);
 
 /// mkcurl_response_delete deletes a response.
 void mkcurl_response_delete(mkcurl_response_t *res);
 
-/// mkcurl_perform sends an HTTP request and returns the related response.
+/// mkcurl_perform sends an HTTP request and returns the related response. It
+/// may return NULL in case of internal error.
 mkcurl_response_t *mkcurl_perform(const mkcurl_request_t *req);
 
 #ifdef __cplusplus
