@@ -56,8 +56,10 @@ install(TARGETS mkcurl-client DESTINATION bin)
 set(BUILD_TESTING "ON" CACHE BOOL "Whether to build tests")
 if(${BUILD_TESTING})
   add_executable(unit-tests unit-tests.cpp)
+  add_executable(integration-tests integration-tests.cpp)
   enable_testing()
   add_test(NAME unit_tests COMMAND unit-tests)
+  add_test(NAME integration_tests COMMAND integration-tests)
   add_test(NAME external_ca COMMAND
            mkcurl-client --ca-bundle-path ./ca-bundle.pem
            https://www.kernel.org)
