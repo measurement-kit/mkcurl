@@ -126,14 +126,14 @@ struct MkCurlEasySetoptFailure : public MkCurlMock {
   ~MkCurlEasySetoptFailure() override {}
 };
 
-#define MK_CURL_EASY_SETOPT_FAILURE_TEST(value, func)                         \
-  TEST_CASE("We deal with curl_easy_setopt failure for: " #value) {           \
-    with_mock<MkCurlEasySetoptFailure<value>>([]() {                          \
-      mkcurl_request_uptr req{mkcurl_request_new()};                      \
-      func(req);                                                              \
-      mkcurl_response_uptr resp{mkcurl_perform(req.get())};               \
+#define MK_CURL_EASY_SETOPT_FAILURE_TEST(value, func)                       \
+  TEST_CASE("We deal with curl_easy_setopt failure for: " #value) {         \
+    with_mock<MkCurlEasySetoptFailure<value>>([]() {                        \
+      mkcurl_request_uptr req{mkcurl_request_new()};                        \
+      func(req);                                                            \
+      mkcurl_response_uptr resp{mkcurl_perform(req.get())};                 \
       REQUIRE(mkcurl_response_get_error(resp.get()) == CURLE_NOT_BUILT_IN); \
-    });                                                                       \
+    });                                                                     \
   }
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
@@ -176,6 +176,9 @@ MK_CURL_EASY_SETOPT_FAILURE_TEST(
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_WRITEDATA, [](mkcurl_request_uptr &) {})
+
+MK_CURL_EASY_SETOPT_FAILURE_TEST(
+    CURLOPT_NOSIGNAL, [](mkcurl_request_uptr &) {})
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_TIMEOUT, [](mkcurl_request_uptr &) {})
@@ -248,13 +251,13 @@ struct MkCurlEasyGetinfoFailure : public MkCurlMock {
   ~MkCurlEasyGetinfoFailure() override {}
 };
 
-#define MK_CURL_EASY_GETINFO_FAILURE_TEST(value)                              \
-  TEST_CASE("We deal with curl_easy_setopt failure for: " #value) {           \
-    with_mock<MkCurlEasyGetinfoFailure<value>>([]() {                         \
-      mkcurl_request_uptr req{mkcurl_request_new()};                      \
-      mkcurl_response_uptr resp{mkcurl_perform(req.get())};               \
+#define MK_CURL_EASY_GETINFO_FAILURE_TEST(value)                            \
+  TEST_CASE("We deal with curl_easy_setopt failure for: " #value) {         \
+    with_mock<MkCurlEasyGetinfoFailure<value>>([]() {                       \
+      mkcurl_request_uptr req{mkcurl_request_new()};                        \
+      mkcurl_response_uptr resp{mkcurl_perform(req.get())};                 \
       REQUIRE(mkcurl_response_get_error(resp.get()) == CURLE_NOT_BUILT_IN); \
-    });                                                                       \
+    });                                                                     \
   }
 
 MK_CURL_EASY_GETINFO_FAILURE_TEST(CURLINFO_RESPONSE_CODE)
