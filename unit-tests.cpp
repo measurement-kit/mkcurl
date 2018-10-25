@@ -265,3 +265,17 @@ MK_CURL_EASY_GETINFO_FAILURE_TEST(CURLINFO_RESPONSE_CODE)
 MK_CURL_EASY_GETINFO_FAILURE_TEST(CURLINFO_REDIRECT_URL)
 
 MK_CURL_EASY_GETINFO_FAILURE_TEST(CURLINFO_CERTINFO)
+
+TEST_CASE("We can successfully copy a response") {
+  // This is possible because we include the inline implementation
+  mkcurl_response res;
+  res.error = CURL_LAST;
+  res.body = "ABC";
+  res.bytes_recv = 128.0;
+  res.certs = "VWXYZ";
+  mkcurl_response_uptr uptr{mkcurl_response_copy(&res)};
+  REQUIRE(uptr->error == res.error);
+  REQUIRE(uptr->body == res.body);
+  REQUIRE(uptr->bytes_recv == res.bytes_recv);
+  REQUIRE(uptr->certs == res.certs);
+}
