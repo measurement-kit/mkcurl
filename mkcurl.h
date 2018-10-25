@@ -569,6 +569,21 @@ mkcurl_response_t *mkcurl_perform(const mkcurl_request_t *req) {
     res->logs += "curl_easy_setopt(CURLOPT_WRITEDATA) failed\n";
     return res.release();
   }
+  // CURL uses MSG_NOSIGNAL where available (i.e. Linux) and SO_NOSIGPIPE
+  // where available (i.e. BSD). This covers all the UNIX operating systems
+  // that we care about (Android, Linux, iOS, macOS). We additionally need
+  // to avoid signals because we are acting as a library that is integrated
+  // into several different languages, so stealing the signal handler from
+  // the language MAY have a negative impact.
+  //
+  // Note: disabling signal handlers makes the default non-threaded CURL
+  // resolver non interruptible, so we need to make sure we recompile using
+  // either the threaded or the c-ares CURL backend.
+  if ((res->error = MKCURL_EASY_SETOPT(
+           handle.get(), CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) {
+    res->logs += "curl_easy_setopt(CURLOPT_NOSIGNAL) failed\n";
+    return res.release();
+  }
   if (req->timeout >= 0 &&
       (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_TIMEOUT,
                                        req->timeout)) != CURLE_OK) {
