@@ -28,6 +28,9 @@ void mkcurl_request_enable_http2(mkcurl_request_t *req);
 /// mkcurl_request_set_method_post sets the method to POST (default is GET).
 void mkcurl_request_set_method_post(mkcurl_request_t *req);
 
+/// mkcurl_request_set_method_put sets the method to PUT (default is GET).
+void mkcurl_request_set_method_put(mkcurl_request_t *req);
+
 /// mkcurl_request_set_url sets the request URL. This setting is required.
 void mkcurl_request_set_url(mkcurl_request_t *req, const char *u);
 
@@ -191,10 +194,16 @@ int64_t mkcurl_response_moveout_response_headers(
 
 #include <curl/curl.h>
 
+enum class mkcurl_method {
+  GET,
+  POST,
+  PUT
+};
+
 struct mkcurl_request {
   std::string ca_path;
   bool enable_http2 = false;
-  bool method_post = false;
+  mkcurl_method method = mkcurl_method::GET;
   std::string url;
   std::vector<std::string> headers;
   std::string body;
@@ -216,7 +225,11 @@ void mkcurl_request_enable_http2(mkcurl_request_t *req) {
 }
 
 void mkcurl_request_set_method_post(mkcurl_request_t *req) {
-  if (req != nullptr) req->method_post = true;
+  if (req != nullptr) req->method = mkcurl_method::POST;
+}
+
+void mkcurl_request_set_method_put(mkcurl_request_t *req) {
+  if (req != nullptr) req->method = mkcurl_method::PUT;
 }
 
 void mkcurl_request_set_url(mkcurl_request_t *req, const char *u) {
@@ -512,6 +525,15 @@ static int mkcurl_debug_cb(CURL *handle,
   return 0;
 }
 
+// mkcurl_read_eof_cb returns immediately EOF when CURL attempts to read
+// the file that is read by default when doing a PUT upload. This way only
+// data set as POST data end up being uploaded. Note that using --data-binary
+// (i.e. CURLOPT_POSTFIELDS) with PUT is documented behaviour, so we are
+// not doing anything obscure here; see <https://ec.haxx.se/http-put.html>.
+static size_t mkcurl_read_eof_cb(char *, size_t, size_t, void *) {
+  return 0;
+}
+
 }  // extern "C"
 
 // TODO(bassosimone):
@@ -550,22 +572,45 @@ mkcurl_response_t *mkcurl_perform(const mkcurl_request_t *req) {
     res->logs += "curl_easy_setopt(CURLOPT_HTTP_VERSION) failed\n";
     return res.release();
   }
+  if (req->method == mkcurl_method::POST ||
+      req->method == mkcurl_method::PUT) {
+    // Disable sending `Expect: 100 continue`. There are actually good
+    // arguments against NOT sending this specific HTTP header by default
+    // with P{OS,U}T <https://curl.haxx.se/mail/lib-2017-07/0013.html>.
+    if ((headers.p = MKCURL_SLIST_APPEND(headers.p, "Expect:")) == nullptr) {
+      res->error = CURLE_OUT_OF_MEMORY;
+      res->logs += "curl_slist_append() failed\n";
+      return res.release();
+    }
+    auto o = (req->method == mkcurl_method::POST) ? CURLOPT_POST : CURLOPT_PUT;
+    if ((res->error = MKCURL_EASY_SETOPT(handle.get(), o, 1L)) != CURLE_OK) {
+      res->logs += "curl_easy_setopt(CURLOPT_P{OS,U}T) failed\n";
+      return res.release();
+    }
+    if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_POSTFIELDS,
+                                         req->body.c_str())) != CURLE_OK) {
+      res->logs += "curl_easy_setopt(CURLOPT_POSTFIELDS) failed\n";
+      return res.release();
+    }
+    // The following is very important to allow us to upload any kind of
+    // binary file, otherwise CURL will use strlen().
+    if ((res->error = MKCURL_EASY_SETOPT(
+             handle.get(), CURLOPT_POSTFIELDSIZE_LARGE,
+             req->body.size())) != CURLE_OK) {
+      res->logs += "curl_easy_setopt(CURLOPT_POSTFIELDSIZE_LARGE) failed\n";
+      return res.release();
+    }
+    if (req->method == mkcurl_method::PUT &&
+        (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_READFUNCTION,
+                                         mkcurl_read_eof_cb)) != CURLE_OK) {
+      res->logs += "curl_easy_setopt(CURLOPT_READFUNCTION) failed\n";
+      return res.release();
+    }
+  }
   if (headers.p != nullptr &&
       (res->error = MKCURL_EASY_SETOPT(
            handle.get(), CURLOPT_HTTPHEADER, headers.p)) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_HTTPHEADER) failed\n";
-    return res.release();
-  }
-  if (!req->body.empty() && req->method_post == true &&
-      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_POSTFIELDS,
-                                       req->body.c_str())) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_POSTFIELDS) failed\n";
-    return res.release();
-  }
-  if (req->method_post == true &&
-      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_POST,
-                                       1L)) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_POST) failed\n";
     return res.release();
   }
   if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_URL,
