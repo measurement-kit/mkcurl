@@ -134,6 +134,10 @@ int64_t mkcurl_response_get_response_headers_binary_v2(
 /// return a NULL pointer in case of internal error.
 const char *mkcurl_response_get_certificate_chain(const mkcurl_response_t *res);
 
+/// mkcurl_response_get_content_type returns the contenty type (if available)
+/// or an empty string. It may return NULL in case of internal error.
+const char *mkcurl_response_get_content_type(const mkcurl_response_t *res);
+
 /// mkcurl_response_delete deletes a response.
 void mkcurl_response_delete(mkcurl_response_t *res);
 
@@ -282,6 +286,7 @@ struct mkcurl_response {
   std::string request_headers;
   std::string response_headers;
   std::string certs;
+  std::string content_type;
 };
 
 mkcurl_response_t *mkcurl_response_copy(const mkcurl_response_t *res) {
@@ -355,6 +360,10 @@ int64_t mkcurl_response_get_response_headers_binary_v2(
 const char *mkcurl_response_get_certificate_chain(
     const mkcurl_response_t *res) {
   return (res != nullptr) ? res->certs.c_str() : "";
+}
+
+const char *mkcurl_response_get_content_type(const mkcurl_response_t *res) {
+  return (res != nullptr) ? res->content_type.c_str() : "";
 }
 
 void mkcurl_response_delete(mkcurl_response_t *res) { delete res; }
@@ -722,6 +731,15 @@ mkcurl_response_t *mkcurl_request_perform(const mkcurl_request_t *req) {
         }
       }
     }
+  }
+  {
+    char *ct = nullptr;
+    if ((res->error = MKCURL_EASY_GETINFO(
+             handle.get(), CURLINFO_CONTENT_TYPE, &ct)) != CURLE_OK) {
+      res->logs += "curl_easy_getinfo(CURLINFO_CONTENT_TYPE) failed\n";
+      return res.release();
+    }
+    if (ct != nullptr) res->content_type = ct;
   }
   res->logs += "curl_easy_perform() success\n";
   return res.release();

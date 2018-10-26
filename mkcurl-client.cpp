@@ -57,6 +57,9 @@ static void summary(const mkcurl_response_uptr &res) {
             << "Redirect URL: "
             << mkcurl_response_get_redirect_url(res.get())
             << std::endl
+            << "Content Type: "
+            << mkcurl_response_get_content_type(res.get())
+            << std::endl
             << "=== END SUMMARY ==="
             << std::endl
             << std::endl;
