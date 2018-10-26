@@ -14,6 +14,9 @@ extern "C" {
 /// mkcurl_request_t is a HTTP request you send using CURL.
 typedef struct mkcurl_request mkcurl_request_t;
 
+/// mkcurl_response_t is an HTTP response.
+typedef struct mkcurl_response mkcurl_response_t;
+
 /// mkcurl_request_new creates a new request object. May return NULL on error.
 mkcurl_request_t *mkcurl_request_new(void);
 
@@ -57,15 +60,12 @@ void mkcurl_request_set_proxy_url(mkcurl_request_t *req, const char *u);
 /// mkcurl_request_enable_follow_redirect enables following redirects.
 void mkcurl_request_enable_follow_redirect(mkcurl_request_t *req);
 
-/// mkcurl_request_delete deletes a request.
-void mkcurl_request_delete(mkcurl_request_t *req);
-
-/// mkcurl_response_t is an HTTP response.
-typedef struct mkcurl_response mkcurl_response_t;
-
 /// mkcurl_request_perform sends an HTTP request and returns the related
 /// response. It may return NULL in case of internal error.
 mkcurl_response_t *mkcurl_request_perform(const mkcurl_request_t *req);
+
+/// mkcurl_request_delete deletes a request.
+void mkcurl_request_delete(mkcurl_request_t *req);
 
 /// mkcurl_response_copy returns a copy of @p res.
 mkcurl_response_t *mkcurl_response_copy(const mkcurl_response_t *res);
