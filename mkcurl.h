@@ -130,10 +130,8 @@ int64_t mkcurl_response_get_response_headers_binary_v2(
     const mkcurl_response_t *res, const uint8_t **p, size_t *n);
 
 /// mkcurl_response_get_certificate_chain returns the certificate chain as a
-/// string. It will look like a config file. There will be commented out lines
-/// indicating certificate properties. The only non-commented data will be
-/// the lines composing the BASE64 encoded certificate. There should be a
-/// empty line between each certificate. It may return NULL on error.
+/// sequence of certificates in PEM format separated by empty lines. It MAY
+/// return a NULL pointer in case of internal error.
 const char *mkcurl_response_get_certificate_chain(const mkcurl_response_t *res);
 
 /// mkcurl_response_delete deletes a response.
@@ -714,16 +712,12 @@ mkcurl_response_t *mkcurl_request_perform(const mkcurl_request_t *req) {
       for (int i = 0; i < certinfo->num_of_certs; i++) {
         for (auto slist = certinfo->certinfo[i]; slist; slist = slist->next) {
           if (slist->data != nullptr) {
-            // This is a linked list with "key:value" strings. We change the
-            // formar slightly so that parsing is easier.
+            // Just pass in the certificates and ignore the rest.
             std::string s = slist->data;
             if (s.find("Cert:") == 0) {
               res->certs += s.substr(5);
-            } else {
-              res->certs += "# ";
-              res->certs += s;
+              res->certs += "\n";
             }
-            res->certs += "\n";
           }
         }
       }
