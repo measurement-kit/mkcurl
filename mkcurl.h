@@ -14,6 +14,9 @@ extern "C" {
 /// mkcurl_request_t is a HTTP request you send using CURL.
 typedef struct mkcurl_request mkcurl_request_t;
 
+/// mkcurl_response_t is an HTTP response.
+typedef struct mkcurl_response mkcurl_response_t;
+
 /// mkcurl_request_new creates a new request object. May return NULL on error.
 mkcurl_request_t *mkcurl_request_new(void);
 
@@ -27,6 +30,9 @@ void mkcurl_request_enable_http2(mkcurl_request_t *req);
 
 /// mkcurl_request_set_method_post sets the method to POST (default is GET).
 void mkcurl_request_set_method_post(mkcurl_request_t *req);
+
+/// mkcurl_request_set_method_put sets the method to PUT (default is GET).
+void mkcurl_request_set_method_put(mkcurl_request_t *req);
 
 /// mkcurl_request_set_url sets the request URL. This setting is required.
 void mkcurl_request_set_url(mkcurl_request_t *req, const char *u);
@@ -54,11 +60,12 @@ void mkcurl_request_set_proxy_url(mkcurl_request_t *req, const char *u);
 /// mkcurl_request_enable_follow_redirect enables following redirects.
 void mkcurl_request_enable_follow_redirect(mkcurl_request_t *req);
 
+/// mkcurl_request_perform sends an HTTP request and returns the related
+/// response. It may return NULL in case of internal error.
+mkcurl_response_t *mkcurl_request_perform(const mkcurl_request_t *req);
+
 /// mkcurl_request_delete deletes a request.
 void mkcurl_request_delete(mkcurl_request_t *req);
-
-/// mkcurl_response_t is an HTTP response.
-typedef struct mkcurl_response mkcurl_response_t;
 
 /// mkcurl_response_copy returns a copy of @p res.
 mkcurl_response_t *mkcurl_response_copy(const mkcurl_response_t *res);
@@ -123,18 +130,16 @@ int64_t mkcurl_response_get_response_headers_binary_v2(
     const mkcurl_response_t *res, const uint8_t **p, size_t *n);
 
 /// mkcurl_response_get_certificate_chain returns the certificate chain as a
-/// string. It will look like a config file. There will be commented out lines
-/// indicating certificate properties. The only non-commented data will be
-/// the lines composing the BASE64 encoded certificate. There should be a
-/// empty line between each certificate. It may return NULL on error.
+/// sequence of certificates in PEM format separated by empty lines. It MAY
+/// return a NULL pointer in case of internal error.
 const char *mkcurl_response_get_certificate_chain(const mkcurl_response_t *res);
+
+/// mkcurl_response_get_content_type returns the contenty type (if available)
+/// or an empty string. It may return NULL in case of internal error.
+const char *mkcurl_response_get_content_type(const mkcurl_response_t *res);
 
 /// mkcurl_response_delete deletes a response.
 void mkcurl_response_delete(mkcurl_response_t *res);
-
-/// mkcurl_perform sends an HTTP request and returns the related response. It
-/// may return NULL in case of internal error.
-mkcurl_response_t *mkcurl_perform(const mkcurl_request_t *req);
 
 #ifdef __cplusplus
 }  // extern "C"
@@ -191,10 +196,16 @@ int64_t mkcurl_response_moveout_response_headers(
 
 #include <curl/curl.h>
 
+enum class mkcurl_method {
+  GET,
+  POST,
+  PUT
+};
+
 struct mkcurl_request {
   std::string ca_path;
   bool enable_http2 = false;
-  bool method_post = false;
+  mkcurl_method method = mkcurl_method::GET;
   std::string url;
   std::vector<std::string> headers;
   std::string body;
@@ -216,7 +227,11 @@ void mkcurl_request_enable_http2(mkcurl_request_t *req) {
 }
 
 void mkcurl_request_set_method_post(mkcurl_request_t *req) {
-  if (req != nullptr) req->method_post = true;
+  if (req != nullptr) req->method = mkcurl_method::POST;
+}
+
+void mkcurl_request_set_method_put(mkcurl_request_t *req) {
+  if (req != nullptr) req->method = mkcurl_method::PUT;
 }
 
 void mkcurl_request_set_url(mkcurl_request_t *req, const char *u) {
@@ -271,6 +286,7 @@ struct mkcurl_response {
   std::string request_headers;
   std::string response_headers;
   std::string certs;
+  std::string content_type;
 };
 
 mkcurl_response_t *mkcurl_response_copy(const mkcurl_response_t *res) {
@@ -344,6 +360,10 @@ int64_t mkcurl_response_get_response_headers_binary_v2(
 const char *mkcurl_response_get_certificate_chain(
     const mkcurl_response_t *res) {
   return (res != nullptr) ? res->certs.c_str() : "";
+}
+
+const char *mkcurl_response_get_content_type(const mkcurl_response_t *res) {
+  return (res != nullptr) ? res->content_type.c_str() : "";
 }
 
 void mkcurl_response_delete(mkcurl_response_t *res) { delete res; }
@@ -512,6 +532,15 @@ static int mkcurl_debug_cb(CURL *handle,
   return 0;
 }
 
+// mkcurl_read_eof_cb returns immediately EOF when CURL attempts to read
+// the file that is read by default when doing a PUT upload. This way only
+// data set as POST data end up being uploaded. Note that using --data-binary
+// (i.e. CURLOPT_POSTFIELDS) with PUT is documented behaviour, so we are
+// not doing anything obscure here; see <https://ec.haxx.se/http-put.html>.
+static size_t mkcurl_read_eof_cb(char *, size_t, size_t, void *) {
+  return 0;
+}
+
 }  // extern "C"
 
 // TODO(bassosimone):
@@ -521,7 +550,7 @@ static int mkcurl_debug_cb(CURL *handle,
 // 2. Allow to disable CURLOPT_SSL_VERIFYHOST
 //
 // 3. Allow to set a specific SSL version with CURLOPT_SSLVERSION
-mkcurl_response_t *mkcurl_perform(const mkcurl_request_t *req) {
+mkcurl_response_t *mkcurl_request_perform(const mkcurl_request_t *req) {
   if (req == nullptr) return nullptr;
   mkcurl_response_uptr res{new mkcurl_response_t{}};
   mkcurl_uptr handle{MKCURL_EASY_INIT()};
@@ -550,22 +579,52 @@ mkcurl_response_t *mkcurl_perform(const mkcurl_request_t *req) {
     res->logs += "curl_easy_setopt(CURLOPT_HTTP_VERSION) failed\n";
     return res.release();
   }
+  if (req->method == mkcurl_method::POST ||
+      req->method == mkcurl_method::PUT) {
+    // Disable sending `Expect: 100 continue`. There are actually good
+    // arguments against NOT sending this specific HTTP header by default
+    // with P{OS,U}T <https://curl.haxx.se/mail/lib-2017-07/0013.html>.
+    if ((headers.p = MKCURL_SLIST_APPEND(headers.p, "Expect:")) == nullptr) {
+      res->error = CURLE_OUT_OF_MEMORY;
+      res->logs += "curl_slist_append() failed\n";
+      return res.release();
+    }
+    auto o = (req->method == mkcurl_method::POST) ? CURLOPT_POST : CURLOPT_PUT;
+    if ((res->error = MKCURL_EASY_SETOPT(handle.get(), o, 1L)) != CURLE_OK) {
+      res->logs += "curl_easy_setopt(CURLOPT_P{OS,U}T) failed\n";
+      return res.release();
+    }
+    if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_POSTFIELDS,
+                                         req->body.c_str())) != CURLE_OK) {
+      res->logs += "curl_easy_setopt(CURLOPT_POSTFIELDS) failed\n";
+      return res.release();
+    }
+    // The following is very important to allow us to upload any kind of
+    // binary file, otherwise CURL will use strlen(). We need to be careful
+    // with the field size because Win32 does not like it when we try to
+    // use very large field sizes on a 32 bit environment.
+#if defined _WIN32 && !defined _WIN64
+#define MKCURLOPT_POSTFIELDSIZE CURLOPT_POSTFIELDSIZE
+#else
+#define MKCURLOPT_POSTFIELDSIZE CURLOPT_POSTFIELDSIZE_LARGE
+#endif
+    if ((res->error = MKCURL_EASY_SETOPT(
+             handle.get(), MKCURLOPT_POSTFIELDSIZE,
+             req->body.size())) != CURLE_OK) {
+      res->logs += "curl_easy_setopt(MKCURLOPT_POSTFIELDSIZE) failed\n";
+      return res.release();
+    }
+    if (req->method == mkcurl_method::PUT &&
+        (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_READFUNCTION,
+                                         mkcurl_read_eof_cb)) != CURLE_OK) {
+      res->logs += "curl_easy_setopt(CURLOPT_READFUNCTION) failed\n";
+      return res.release();
+    }
+  }
   if (headers.p != nullptr &&
       (res->error = MKCURL_EASY_SETOPT(
            handle.get(), CURLOPT_HTTPHEADER, headers.p)) != CURLE_OK) {
     res->logs += "curl_easy_setopt(CURLOPT_HTTPHEADER) failed\n";
-    return res.release();
-  }
-  if (!req->body.empty() && req->method_post == true &&
-      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_POSTFIELDS,
-                                       req->body.c_str())) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_POSTFIELDS) failed\n";
-    return res.release();
-  }
-  if (req->method_post == true &&
-      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_POST,
-                                       1L)) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_POST) failed\n";
     return res.release();
   }
   if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_URL,
@@ -669,20 +728,25 @@ mkcurl_response_t *mkcurl_perform(const mkcurl_request_t *req) {
       for (int i = 0; i < certinfo->num_of_certs; i++) {
         for (auto slist = certinfo->certinfo[i]; slist; slist = slist->next) {
           if (slist->data != nullptr) {
-            // This is a linked list with "key:value" strings. We change the
-            // formar slightly so that parsing is easier.
+            // Just pass in the certificates and ignore the rest.
             std::string s = slist->data;
             if (s.find("Cert:") == 0) {
               res->certs += s.substr(5);
-            } else {
-              res->certs += "# ";
-              res->certs += s;
+              res->certs += "\n";
             }
-            res->certs += "\n";
           }
         }
       }
     }
+  }
+  {
+    char *ct = nullptr;
+    if ((res->error = MKCURL_EASY_GETINFO(
+             handle.get(), CURLINFO_CONTENT_TYPE, &ct)) != CURLE_OK) {
+      res->logs += "curl_easy_getinfo(CURLINFO_CONTENT_TYPE) failed\n";
+      return res.release();
+    }
+    if (ct != nullptr) res->content_type = ct;
   }
   res->logs += "curl_easy_perform() success\n";
   return res.release();

@@ -74,6 +74,6 @@ if(${BUILD_TESTING})
            mkcurl-client --follow-redirect http://google.com)
   add_test(NAME post COMMAND
            mkcurl-client --post --header "Content-Type: application/json"
-           --post-data "{\"net-tests\":[{\"input-hashes\":null,\"name\":\"http_invalid_request_line\",\"test-helpers\":[\"tcp-echo\"],\"version\":\"0.0.3\"}]}"
+           --data "{\"net-tests\":[{\"input-hashes\":null,\"name\":\"http_invalid_request_line\",\"test-helpers\":[\"tcp-echo\"],\"version\":\"0.0.3\"}]}"
            https://bouncer.ooni.io/bouncer/net-tests)
 endif()

@@ -27,11 +27,12 @@ static void usage() {
   std::clog << "a double dash (i.e. --option). Available options:\n";
   std::clog << "\n";
   std::clog << "  --ca-bundle-path <path> : path to OpenSSL CA bundle\n";
+  std::clog << "  --data <data>           : send <data> as body\n";
   std::clog << "  --enable-http2          : enable HTTP2 support\n";
   std::clog << "  --follow-redirect       : enable following redirects\n";
   std::clog << "  --header <header>       : add <header> to headers\n";
   std::clog << "  --post                  : use POST rather than GET\n";
-  std::clog << "  --post-data <data>      : send <data> as body\n";
+  std::clog << "  --put                   : use PUT rather than GET\n";
   std::clog << "  --timeout <sec>         : set timeout of <sec> seconds\n";
   std::clog << std::endl;
   // clang-format on
@@ -55,6 +56,9 @@ static void summary(const mkcurl_response_uptr &res) {
             << std::endl
             << "Redirect URL: "
             << mkcurl_response_get_redirect_url(res.get())
+            << std::endl
+            << "Content Type: "
+            << mkcurl_response_get_content_type(res.get())
             << std::endl
             << "=== END SUMMARY ==="
             << std::endl
@@ -100,8 +104,9 @@ int main(int, char **argv) {
   {
     argh::parser cmdline;
     cmdline.add_param("ca-bundle-path");
+    cmdline.add_param("data");
     cmdline.add_param("header");
-    cmdline.add_param("post-data");
+    cmdline.add_param("timeout");
     cmdline.parse(argv);
     for (auto &flag : cmdline.flags()) {
       if (flag == "enable-http2") {
@@ -110,6 +115,8 @@ int main(int, char **argv) {
         mkcurl_request_enable_follow_redirect(req.get());
       } else if (flag == "post") {
         mkcurl_request_set_method_post(req.get());
+      } else if (flag == "put") {
+        mkcurl_request_set_method_put(req.get());
       } else {
         std::clog << "fatal: unrecognized flag: " << flag << std::endl;
         usage();
@@ -119,10 +126,10 @@ int main(int, char **argv) {
     for (auto &param : cmdline.params()) {
       if (param.first == "ca-bundle-path") {
         mkcurl_request_set_ca_bundle_path(req.get(), param.second.c_str());
+      } else if (param.first == "data") {
+        mkcurl_request_set_body(req.get(), param.second.c_str());
       } else if (param.first == "header") {
         mkcurl_request_add_header(req.get(), param.second.c_str());
-      } else if (param.first == "post-data") {
-        mkcurl_request_set_body(req.get(), param.second.c_str());
       } else if (param.first == "timeout") {
         // Implementation note: since this is meant to be just a testing
         // client, we don't bother with properly validating the number that
@@ -142,7 +149,7 @@ int main(int, char **argv) {
     }
     mkcurl_request_set_url(req.get(), cmdline.pos_args()[1].c_str());
   }
-  mkcurl_response_uptr res{mkcurl_perform(req.get())};
+  mkcurl_response_uptr res{mkcurl_request_perform(req.get())};
   if (!res) {
     std::clog << "Out of memory or really-bad internal error" << std::endl;
     exit(EXIT_FAILURE);
