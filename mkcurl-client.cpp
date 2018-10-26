@@ -146,7 +146,7 @@ int main(int, char **argv) {
     }
     mkcurl_request_set_url(req.get(), cmdline.pos_args()[1].c_str());
   }
-  mkcurl_response_uptr res{mkcurl_perform(req.get())};
+  mkcurl_response_uptr res{mkcurl_request_perform(req.get())};
   if (!res) {
     std::clog << "Out of memory or really-bad internal error" << std::endl;
     exit(EXIT_FAILURE);

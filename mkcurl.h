@@ -63,6 +63,10 @@ void mkcurl_request_delete(mkcurl_request_t *req);
 /// mkcurl_response_t is an HTTP response.
 typedef struct mkcurl_response mkcurl_response_t;
 
+/// mkcurl_request_perform sends an HTTP request and returns the related
+/// response. It may return NULL in case of internal error.
+mkcurl_response_t *mkcurl_request_perform(const mkcurl_request_t *req);
+
 /// mkcurl_response_copy returns a copy of @p res.
 mkcurl_response_t *mkcurl_response_copy(const mkcurl_response_t *res);
 
@@ -134,10 +138,6 @@ const char *mkcurl_response_get_certificate_chain(const mkcurl_response_t *res);
 
 /// mkcurl_response_delete deletes a response.
 void mkcurl_response_delete(mkcurl_response_t *res);
-
-/// mkcurl_perform sends an HTTP request and returns the related response. It
-/// may return NULL in case of internal error.
-mkcurl_response_t *mkcurl_perform(const mkcurl_request_t *req);
 
 #ifdef __cplusplus
 }  // extern "C"
@@ -543,7 +543,7 @@ static size_t mkcurl_read_eof_cb(char *, size_t, size_t, void *) {
 // 2. Allow to disable CURLOPT_SSL_VERIFYHOST
 //
 // 3. Allow to set a specific SSL version with CURLOPT_SSLVERSION
-mkcurl_response_t *mkcurl_perform(const mkcurl_request_t *req) {
+mkcurl_response_t *mkcurl_request_perform(const mkcurl_request_t *req) {
   if (req == nullptr) return nullptr;
   mkcurl_response_uptr res{new mkcurl_response_t{}};
   mkcurl_uptr handle{MKCURL_EASY_INIT()};
