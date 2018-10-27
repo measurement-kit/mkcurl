@@ -190,6 +190,7 @@ int64_t mkcurl_response_moveout_response_headers(
 
 #include <assert.h>
 
+#include <chrono>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -288,6 +289,17 @@ struct mkcurl_response {
   std::string certs;
   std::string content_type;
 };
+
+// mkcurl_log appends @p line to @p logs. It adds information on the current
+// time in millisecond. It also appends a newline to the end of the line.
+static void mkcurl_log(std::string *logs, std::string &&line) {
+  if (logs == nullptr) abort();
+  std::stringstream ss;
+  auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now().time_since_epoch());
+  ss << "[" << now.count() << "] " << line << "\n";
+  *logs += ss.str();
+}
 
 mkcurl_response_t *mkcurl_response_copy(const mkcurl_response_t *res) {
   mkcurl_response_t *copy = nullptr;
@@ -445,12 +457,12 @@ static int mkcurl_debug_cb(CURL *handle,
     ss << str;
     std::string line;
     while (std::getline(ss, line, '\n')) {
+      std::stringstream logline;
       if (!prefix.empty()) {
-        res->logs += prefix;
-        res->logs += " ";
+        logline << prefix << " ";
       }
-      res->logs += line;
-      res->logs += "\n";
+      logline << line;
+      mkcurl_log(&res->logs, logline.str());
     }
   };
 
@@ -556,27 +568,27 @@ mkcurl_response_t *mkcurl_request_perform(const mkcurl_request_t *req) {
   mkcurl_uptr handle{MKCURL_EASY_INIT()};
   if (!handle) {
     res->error = CURLE_OUT_OF_MEMORY;
-    res->logs += "curl_easy_init() failed\n";
+    mkcurl_log(&res->logs, "curl_easy_init() failed");
     return res.release();
   }
   mkcurl_slist headers;
   for (auto &s : req->headers) {
     if ((headers.p = MKCURL_SLIST_APPEND(headers.p, s.c_str())) == nullptr) {
       res->error = CURLE_OUT_OF_MEMORY;
-      res->logs += "curl_slist_append() failed\n";
+      mkcurl_log(&res->logs, "curl_slist_append() failed");
       return res.release();
     }
   }
   if (!req->ca_path.empty() &&
       (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_CAINFO,
                                        req->ca_path.c_str())) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_CAINFO) failed\n";
+    mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_CAINFO) failed");
     return res.release();
   }
   if (req->enable_http2 == true &&
       (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_HTTP_VERSION,
                                        CURL_HTTP_VERSION_2_0)) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_HTTP_VERSION) failed\n";
+    mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_HTTP_VERSION) failed");
     return res.release();
   }
   if (req->method == mkcurl_method::POST ||
@@ -586,17 +598,17 @@ mkcurl_response_t *mkcurl_request_perform(const mkcurl_request_t *req) {
     // with P{OS,U}T <https://curl.haxx.se/mail/lib-2017-07/0013.html>.
     if ((headers.p = MKCURL_SLIST_APPEND(headers.p, "Expect:")) == nullptr) {
       res->error = CURLE_OUT_OF_MEMORY;
-      res->logs += "curl_slist_append() failed\n";
+      mkcurl_log(&res->logs, "curl_slist_append() failed");
       return res.release();
     }
     auto o = (req->method == mkcurl_method::POST) ? CURLOPT_POST : CURLOPT_PUT;
     if ((res->error = MKCURL_EASY_SETOPT(handle.get(), o, 1L)) != CURLE_OK) {
-      res->logs += "curl_easy_setopt(CURLOPT_P{OS,U}T) failed\n";
+      mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_P{OS,U}T) failed");
       return res.release();
     }
     if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_POSTFIELDS,
                                          req->body.c_str())) != CURLE_OK) {
-      res->logs += "curl_easy_setopt(CURLOPT_POSTFIELDS) failed\n";
+      mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_POSTFIELDS) failed");
       return res.release();
     }
     // The following is very important to allow us to upload any kind of
@@ -611,35 +623,35 @@ mkcurl_response_t *mkcurl_request_perform(const mkcurl_request_t *req) {
     if ((res->error = MKCURL_EASY_SETOPT(
              handle.get(), MKCURLOPT_POSTFIELDSIZE,
              req->body.size())) != CURLE_OK) {
-      res->logs += "curl_easy_setopt(MKCURLOPT_POSTFIELDSIZE) failed\n";
+      mkcurl_log(&res->logs, "curl_easy_setopt(MKCURLOPT_POSTFIELDSIZE) failed");
       return res.release();
     }
     if (req->method == mkcurl_method::PUT &&
         (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_READFUNCTION,
                                          mkcurl_read_eof_cb)) != CURLE_OK) {
-      res->logs += "curl_easy_setopt(CURLOPT_READFUNCTION) failed\n";
+      mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_READFUNCTION) failed");
       return res.release();
     }
   }
   if (headers.p != nullptr &&
       (res->error = MKCURL_EASY_SETOPT(
            handle.get(), CURLOPT_HTTPHEADER, headers.p)) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_HTTPHEADER) failed\n";
+    mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_HTTPHEADER) failed");
     return res.release();
   }
   if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_URL,
                                        req->url.c_str())) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_URL) failed\n";
+    mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_URL) failed");
     return res.release();
   }
   if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_WRITEFUNCTION,
                                        mkcurl_body_cb)) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_WRITEFUNCTION) failed\n";
+    mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_WRITEFUNCTION) failed");
     return res.release();
   }
   if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_WRITEDATA,
                                        res.get())) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_WRITEDATA) failed\n";
+    mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_WRITEDATA) failed");
     return res.release();
   }
   // CURL uses MSG_NOSIGNAL where available (i.e. Linux) and SO_NOSIGPIPE
@@ -654,56 +666,56 @@ mkcurl_response_t *mkcurl_request_perform(const mkcurl_request_t *req) {
   // either the threaded or the c-ares CURL backend.
   if ((res->error = MKCURL_EASY_SETOPT(
            handle.get(), CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_NOSIGNAL) failed\n";
+    mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_NOSIGNAL) failed");
     return res.release();
   }
   if (req->timeout >= 0 &&
       (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_TIMEOUT,
                                        req->timeout)) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_TIMEOUT) failed\n";
+    mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_TIMEOUT) failed");
     return res.release();
   }
   if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_DEBUGFUNCTION,
                                        mkcurl_debug_cb)) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_DEBUGFUNCTION) failed\n";
+    mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_DEBUGFUNCTION) failed");
     return res.release();
   }
   if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_DEBUGDATA,
                                        res.get())) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_DEBUGDATA) failed\n";
+    mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_DEBUGDATA) failed");
     return res.release();
   }
   if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_VERBOSE,
                                        1L)) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_VERBOSE) failed\n";
+    mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_VERBOSE) failed");
     return res.release();
   }
   if (!req->proxy_url.empty() &&
       (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_PROXY,
                                        req->proxy_url.c_str())) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_PROXY) failed\n";
+    mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_PROXY) failed");
     return res.release();
   }
   if (req->follow_redir == true &&
       (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_FOLLOWLOCATION,
                                        1L)) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_FOLLOWLOCATION) failed\n";
+    mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_FOLLOWLOCATION) failed");
     return res.release();
   }
   if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_CERTINFO,
                                        1L)) != CURLE_OK) {
-    res->logs += "curl_easy_setopt(CURLOPT_CERTINFO) failed\n";
+    mkcurl_log(&res->logs, "curl_easy_setopt(CURLOPT_CERTINFO) failed");
     return res.release();
   }
   if ((res->error = MKCURL_EASY_PERFORM(handle.get())) != CURLE_OK) {
-    res->logs += "curl_easy_perform() failed\n";
+    mkcurl_log(&res->logs, "curl_easy_perform() failed");
     return res.release();
   }
   {
     long status_code = 0;
     if ((res->error = MKCURL_EASY_GETINFO(
              handle.get(), CURLINFO_RESPONSE_CODE, &status_code)) != CURLE_OK) {
-      res->logs += "curl_easy_getinfo(CURLINFO_RESPONSE_CODE) failed\n";
+      mkcurl_log(&res->logs, "curl_easy_getinfo(CURLINFO_RESPONSE_CODE) failed");
       return res.release();
     }
     res->status_code = (int64_t)status_code;
@@ -712,7 +724,7 @@ mkcurl_response_t *mkcurl_request_perform(const mkcurl_request_t *req) {
     char *url = nullptr;
     if ((res->error = MKCURL_EASY_GETINFO(
              handle.get(), CURLINFO_REDIRECT_URL, &url)) != CURLE_OK) {
-      res->logs += "curl_easy_getinfo(CURLINFO_REDIRECT_URL) failed\n";
+      mkcurl_log(&res->logs, "curl_easy_getinfo(CURLINFO_REDIRECT_URL) failed");
       return res.release();
     }
     if (url != nullptr) res->redirect_url = url;
@@ -721,7 +733,7 @@ mkcurl_response_t *mkcurl_request_perform(const mkcurl_request_t *req) {
     curl_certinfo *certinfo = nullptr;
     if ((res->error = MKCURL_EASY_GETINFO(
              handle.get(), CURLINFO_CERTINFO, &certinfo)) != CURLE_OK) {
-      res->logs += "curl_easy_getinfo(CURLINFO_CERTINFO) failed\n";
+      mkcurl_log(&res->logs, "curl_easy_getinfo(CURLINFO_CERTINFO) failed");
       return res.release();
     }
     if (certinfo != nullptr && certinfo->num_of_certs > 0) {
@@ -743,12 +755,12 @@ mkcurl_response_t *mkcurl_request_perform(const mkcurl_request_t *req) {
     char *ct = nullptr;
     if ((res->error = MKCURL_EASY_GETINFO(
              handle.get(), CURLINFO_CONTENT_TYPE, &ct)) != CURLE_OK) {
-      res->logs += "curl_easy_getinfo(CURLINFO_CONTENT_TYPE) failed\n";
+      mkcurl_log(&res->logs, "curl_easy_getinfo(CURLINFO_CONTENT_TYPE) failed");
       return res.release();
     }
     if (ct != nullptr) res->content_type = ct;
   }
-  res->logs += "curl_easy_perform() success\n";
+  mkcurl_log(&res->logs, "curl_easy_perform() success");
   return res.release();
 }
 
