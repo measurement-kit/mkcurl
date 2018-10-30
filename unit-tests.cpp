@@ -73,9 +73,9 @@ struct MkCurlEasyInitFailure : public MkCurlMock {
 
 TEST_CASE("We deal with curl_easy_init() failure") {
   with_mock<MkCurlEasyInitFailure>([]() {
-    mkcurl_request_uptr req{mkcurl_request_new()};
-    mkcurl_response_uptr resp{mkcurl_request_perform(req.get())};
-    REQUIRE(mkcurl_response_get_error(resp.get()) == CURLE_OUT_OF_MEMORY);
+    mkcurl_request_uptr req{mkcurl_request_new_nonnull()};
+    mkcurl_response_uptr resp{mkcurl_request_perform_v2(req.get())};
+    REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURLE_OUT_OF_MEMORY);
   });
 }
 
@@ -98,10 +98,10 @@ struct MkCurlSlistAppendFailure : public MkCurlMock {
 
 TEST_CASE("We deal with curl_slist_append() failure") {
   with_mock<MkCurlSlistAppendFailure>([]() {
-    mkcurl_request_uptr req{mkcurl_request_new()};
-    mkcurl_request_add_header(req.get(), "Content-Type: text/plain");
-    mkcurl_response_uptr resp{mkcurl_request_perform(req.get())};
-    REQUIRE(mkcurl_response_get_error(resp.get()) == CURLE_OUT_OF_MEMORY);
+    mkcurl_request_uptr req{mkcurl_request_new_nonnull()};
+    mkcurl_request_add_header_v2(req.get(), "Content-Type: text/plain");
+    mkcurl_response_uptr resp{mkcurl_request_perform_v2(req.get())};
+    REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURLE_OUT_OF_MEMORY);
   });
 }
 
@@ -127,46 +127,50 @@ struct MkCurlEasySetoptFailure : public MkCurlMock {
   ~MkCurlEasySetoptFailure() override {}
 };
 
-#define MK_CURL_EASY_SETOPT_FAILURE_TEST(value, func)                       \
-  TEST_CASE("We deal with curl_easy_setopt failure for: " #value) {         \
-    with_mock<MkCurlEasySetoptFailure<value>>([]() {                        \
-      mkcurl_request_uptr req{mkcurl_request_new()};                        \
-      func(req);                                                            \
-      mkcurl_response_uptr resp{mkcurl_request_perform(req.get())};         \
-      REQUIRE(mkcurl_response_get_error(resp.get()) == CURLE_NOT_BUILT_IN); \
-    });                                                                     \
+#define MK_CURL_EASY_SETOPT_FAILURE_TEST(value, func)                          \
+  TEST_CASE("We deal with curl_easy_setopt failure for: " #value) {            \
+    with_mock<MkCurlEasySetoptFailure<value>>([]() {                           \
+      mkcurl_request_uptr req{mkcurl_request_new_nonnull()};                   \
+      func(req);                                                               \
+      mkcurl_response_uptr resp{mkcurl_request_perform_v2(req.get())};         \
+      REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURLE_NOT_BUILT_IN); \
+    });                                                                        \
   }
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_CAINFO,
     [](mkcurl_request_uptr &req) {
-      mkcurl_request_set_ca_bundle_path(req.get(), "/etc/ssl/cert.pem");
+      mkcurl_request_set_ca_bundle_path_v2(req.get(), "/etc/ssl/cert.pem");
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_HTTP_VERSION,
     [](mkcurl_request_uptr &req) {
-      mkcurl_request_enable_http2(req.get());
+      mkcurl_request_enable_http2_v2(req.get());
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_HTTPHEADER,
     [](mkcurl_request_uptr &req) {
-      mkcurl_request_add_header(req.get(), "Content-Type: text/plain");
+      mkcurl_request_add_header_v2(req.get(), "Content-Type: text/plain");
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_POSTFIELDS,
     [](mkcurl_request_uptr &req) {
-      mkcurl_request_set_method_post(req.get());
-      mkcurl_request_set_body(req.get(), "12345 54321");
+      mkcurl_request_set_method_post_v2(req.get());
+      std::string s = "12345 54321";
+      mkcurl_request_set_body_binary_v3(
+          req.get(), (const uint8_t *)s.c_str(), s.size());
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_POST,
     [](mkcurl_request_uptr &req) {
-      mkcurl_request_set_method_post(req.get());
-      mkcurl_request_set_body(req.get(), "12345 54321");
+      mkcurl_request_set_method_post_v2(req.get());
+      std::string s = "12345 54321";
+      mkcurl_request_set_body_binary_v3(
+          req.get(), (const uint8_t *)s.c_str(), s.size());
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
@@ -196,13 +200,13 @@ MK_CURL_EASY_SETOPT_FAILURE_TEST(
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_PROXY,
     [](mkcurl_request_uptr &req) {
-      mkcurl_request_set_proxy_url(req.get(), "socks5h://127.0.0.1:9050");
+      mkcurl_request_set_proxy_url_v2(req.get(), "socks5h://127.0.0.1:9050");
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
     CURLOPT_FOLLOWLOCATION,
     [](mkcurl_request_uptr &req) {
-      mkcurl_request_enable_follow_redirect(req.get());
+      mkcurl_request_enable_follow_redirect_v2(req.get());
     })
 
 MK_CURL_EASY_SETOPT_FAILURE_TEST(
@@ -227,10 +231,10 @@ struct MkCurlEasyPerformFailure : public MkCurlMock {
 
 TEST_CASE("We deal with curl_easy_perform() failure") {
   with_mock<MkCurlEasyPerformFailure>([]() {
-    mkcurl_request_uptr req{mkcurl_request_new()};
-    mkcurl_request_add_header(req.get(), "Content-Type: text/plain");
-    mkcurl_response_uptr resp{mkcurl_request_perform(req.get())};
-    REQUIRE(mkcurl_response_get_error(resp.get()) == CURLE_NOT_BUILT_IN);
+    mkcurl_request_uptr req{mkcurl_request_new_nonnull()};
+    mkcurl_request_add_header_v2(req.get(), "Content-Type: text/plain");
+    mkcurl_response_uptr resp{mkcurl_request_perform_v2(req.get())};
+    REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURLE_NOT_BUILT_IN);
   });
 }
 
@@ -252,13 +256,13 @@ struct MkCurlEasyGetinfoFailure : public MkCurlMock {
   ~MkCurlEasyGetinfoFailure() override {}
 };
 
-#define MK_CURL_EASY_GETINFO_FAILURE_TEST(value)                            \
-  TEST_CASE("We deal with curl_easy_setopt failure for: " #value) {         \
-    with_mock<MkCurlEasyGetinfoFailure<value>>([]() {                       \
-      mkcurl_request_uptr req{mkcurl_request_new()};                        \
-      mkcurl_response_uptr resp{mkcurl_request_perform(req.get())};         \
-      REQUIRE(mkcurl_response_get_error(resp.get()) == CURLE_NOT_BUILT_IN); \
-    });                                                                     \
+#define MK_CURL_EASY_GETINFO_FAILURE_TEST(value)                               \
+  TEST_CASE("We deal with curl_easy_setopt failure for: " #value) {            \
+    with_mock<MkCurlEasyGetinfoFailure<value>>([]() {                          \
+      mkcurl_request_uptr req{mkcurl_request_new_nonnull()};                   \
+      mkcurl_response_uptr resp{mkcurl_request_perform_v2(req.get())};         \
+      REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURLE_NOT_BUILT_IN); \
+    });                                                                        \
   }
 
 MK_CURL_EASY_GETINFO_FAILURE_TEST(CURLINFO_RESPONSE_CODE)
@@ -266,17 +270,3 @@ MK_CURL_EASY_GETINFO_FAILURE_TEST(CURLINFO_RESPONSE_CODE)
 MK_CURL_EASY_GETINFO_FAILURE_TEST(CURLINFO_REDIRECT_URL)
 
 MK_CURL_EASY_GETINFO_FAILURE_TEST(CURLINFO_CERTINFO)
-
-TEST_CASE("We can successfully copy a response") {
-  // This is possible because we include the inline implementation
-  mkcurl_response res;
-  res.error = CURL_LAST;
-  res.body = "ABC";
-  res.bytes_recv = 128.0;
-  res.certs = "VWXYZ";
-  mkcurl_response_uptr uptr{mkcurl_response_copy(&res)};
-  REQUIRE(uptr->error == res.error);
-  REQUIRE(uptr->body == res.body);
-  REQUIRE(uptr->bytes_recv == res.bytes_recv);
-  REQUIRE(uptr->certs == res.certs);
-}
