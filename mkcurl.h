@@ -9,13 +9,13 @@
 /// This file contains Measurement Kit cURL wrappers. You should create a
 /// mkcurl_request_t instance and configure it. Make sure you supply the URL
 /// otherwise we don't know what to do. Then you can perform the request by
-/// using mkcurl_request_perform_v2. This function returns the response as a
+/// using mkcurl_request_perform_nonnull. This function returns the response as a
 /// mkcurl_response_t instance. Make sure you check whether there was any
 /// sort of network level error with mkcurl_response_get_error_v2, and also
 /// check the HTTP status code with mkcurl_response_get_status_code_v2 to
 /// be sure your request succeded before proceeding further. In case of error
 /// you can always inspect the logs. Be careful that the logs may contain
-/// binary data, hence on some languages you cannot treat them as a string.
+/// non UTF-8 data, hence on some languages you cannot treat them as a string.
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -85,10 +85,10 @@ void mkcurl_request_set_proxy_url_v2(mkcurl_request_t *req, const char *u);
 /// function call std::abort if passed any null argument by the caller.
 void mkcurl_request_enable_follow_redirect_v2(mkcurl_request_t *req);
 
-/// mkcurl_request_perform_v2 sends an HTTP request and returns the related
+/// mkcurl_request_perform_nonnull sends an HTTP request and returns the related
 /// response. It will never return a null pointer. It will call std::abort if
 /// passed a null argument by the caller.
-mkcurl_response_t *mkcurl_request_perform_v2(const mkcurl_request_t *req);
+mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req);
 
 /// mkcurl_request_delete deletes @p req. Note that @p req MAY be null.
 void mkcurl_request_delete(mkcurl_request_t *req);
@@ -124,7 +124,8 @@ double mkcurl_response_get_bytes_sent_v2(const mkcurl_response_t *res);
 double mkcurl_response_get_bytes_recv_v2(const mkcurl_response_t *res);
 
 /// mkcurl_response_get_logs_binary_v3 returns the logs a binary vector. It
-/// calls std::abort if passed a null argument by the caller.
+/// calls std::abort if passed a null argument by the caller. We use a binary
+/// vector because in principle logs MAY contain non UTF-8 data.
 void mkcurl_response_get_logs_binary_v3(const mkcurl_response_t *res,
                                         const uint8_t **p, size_t *n);
 
@@ -136,7 +137,8 @@ const char *mkcurl_response_get_request_headers_v2(
 
 /// mkcurl_response_get_response_headers_binary_v3 returns the response line
 /// and the headers as a binary vector. It calls std::abort if any of its
-/// arguments is a null pointer.
+/// arguments is a null pointer. We use a binary vector because in principle
+/// the headers MAY contain non UTF-8 data.
 void mkcurl_response_get_response_headers_binary_v3(
     const mkcurl_response_t *res, const uint8_t **p, size_t *n);
 
@@ -197,7 +199,7 @@ std::string mkcurl_response_moveout_logs_v2(mkcurl_response_uptr &res);
 
 /// mkcurl_response_moveout_response_headers_v2 moves response headers out
 /// of @p res. This function calls std::abort if @p res is null. Note
-/// that in principle the headers MAY be binary.
+/// that in principle headers MAY be contain non UTF-8 data.
 std::string mkcurl_response_moveout_response_headers_v2(
     mkcurl_response_uptr &res);
 
@@ -275,7 +277,10 @@ void mkcurl_request_set_method_post_v2(mkcurl_request_t *req) {
 }
 
 void mkcurl_request_set_method_put_v2(mkcurl_request_t *req) {
-  if (req != nullptr) req->method = mkcurl_method::PUT;
+  if (req == nullptr) {
+    MKCURL_ABORT();
+  }
+  req->method = mkcurl_method::PUT;
 }
 
 void mkcurl_request_set_url_v2(mkcurl_request_t *req, const char *u) {
@@ -307,8 +312,8 @@ void mkcurl_request_set_timeout_v2(mkcurl_request_t *req, int64_t timeout) {
   req->timeout = (long)((timeout < 0L)
                             ? 0L  // which, for CURL means infinite
                             : (timeout < LONG_MAX)
-                                  ? timeout     // it's in range
-                                  : LONG_MAX);  // curl uses a long argument
+                                  ? (long)timeout  // it's in range
+                                  : LONG_MAX);     // curl uses a long argument
 }
 
 void mkcurl_request_set_proxy_url_v2(mkcurl_request_t *req, const char *u) {
@@ -647,7 +652,7 @@ static size_t mkcurl_read_eof_cb(char *, size_t, size_t, void *) {
 // 2. Allow to disable CURLOPT_SSL_VERIFYHOST
 //
 // 3. Allow to set a specific SSL version with CURLOPT_SSLVERSION
-mkcurl_response_t *mkcurl_request_perform_v2(const mkcurl_request_t *req) {
+mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
   if (req == nullptr) {
     MKCURL_ABORT();
   }

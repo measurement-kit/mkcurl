@@ -74,7 +74,7 @@ struct MkCurlEasyInitFailure : public MkCurlMock {
 TEST_CASE("We deal with curl_easy_init() failure") {
   with_mock<MkCurlEasyInitFailure>([]() {
     mkcurl_request_uptr req{mkcurl_request_new_nonnull()};
-    mkcurl_response_uptr resp{mkcurl_request_perform_v2(req.get())};
+    mkcurl_response_uptr resp{mkcurl_request_perform_nonnull(req.get())};
     REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURLE_OUT_OF_MEMORY);
   });
 }
@@ -100,7 +100,7 @@ TEST_CASE("We deal with curl_slist_append() failure") {
   with_mock<MkCurlSlistAppendFailure>([]() {
     mkcurl_request_uptr req{mkcurl_request_new_nonnull()};
     mkcurl_request_add_header_v2(req.get(), "Content-Type: text/plain");
-    mkcurl_response_uptr resp{mkcurl_request_perform_v2(req.get())};
+    mkcurl_response_uptr resp{mkcurl_request_perform_nonnull(req.get())};
     REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURLE_OUT_OF_MEMORY);
   });
 }
@@ -132,7 +132,7 @@ struct MkCurlEasySetoptFailure : public MkCurlMock {
     with_mock<MkCurlEasySetoptFailure<value>>([]() {                           \
       mkcurl_request_uptr req{mkcurl_request_new_nonnull()};                   \
       func(req);                                                               \
-      mkcurl_response_uptr resp{mkcurl_request_perform_v2(req.get())};         \
+      mkcurl_response_uptr resp{mkcurl_request_perform_nonnull(req.get())};    \
       REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURLE_NOT_BUILT_IN); \
     });                                                                        \
   }
@@ -233,7 +233,7 @@ TEST_CASE("We deal with curl_easy_perform() failure") {
   with_mock<MkCurlEasyPerformFailure>([]() {
     mkcurl_request_uptr req{mkcurl_request_new_nonnull()};
     mkcurl_request_add_header_v2(req.get(), "Content-Type: text/plain");
-    mkcurl_response_uptr resp{mkcurl_request_perform_v2(req.get())};
+    mkcurl_response_uptr resp{mkcurl_request_perform_nonnull(req.get())};
     REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURLE_NOT_BUILT_IN);
   });
 }
@@ -260,7 +260,7 @@ struct MkCurlEasyGetinfoFailure : public MkCurlMock {
   TEST_CASE("We deal with curl_easy_setopt failure for: " #value) {            \
     with_mock<MkCurlEasyGetinfoFailure<value>>([]() {                          \
       mkcurl_request_uptr req{mkcurl_request_new_nonnull()};                   \
-      mkcurl_response_uptr resp{mkcurl_request_perform_v2(req.get())};         \
+      mkcurl_response_uptr resp{mkcurl_request_perform_nonnull(req.get())};    \
       REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURLE_NOT_BUILT_IN); \
     });                                                                        \
   }

@@ -20,7 +20,7 @@ TEST_CASE("We can move in and move out possibly binary data") {
   })";
   // clang-format on
   mkcurl_request_movein_body_v2(request, std::move(request_body));
-  mkcurl_response_uptr response{mkcurl_request_perform_v2(request.get())};
+  mkcurl_response_uptr response{mkcurl_request_perform_nonnull(request.get())};
   REQUIRE(mkcurl_response_get_status_code_v2(response.get()) == 200);
   {
     std::string body = mkcurl_response_moveout_body_v2(response);

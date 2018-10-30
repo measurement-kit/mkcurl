@@ -146,7 +146,7 @@ int main(int, char **argv) {
     }
     mkcurl_request_set_url_v2(req.get(), cmdline.pos_args()[1].c_str());
   }
-  mkcurl_response_uptr res{mkcurl_request_perform_v2(req.get())};
+  mkcurl_response_uptr res{mkcurl_request_perform_nonnull(req.get())};
   summary(res);
   if (mkcurl_response_get_error_v2(res.get()) != 0 ||
       mkcurl_response_get_status_code_v2(res.get()) != 200) {
