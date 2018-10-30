@@ -46,9 +46,9 @@ endif()
 list(APPEND MKCURL_LIBS Threads::Threads)
 link_libraries("${MKCURL_LIBS}")
 
+add_library(mkcurl mkcurl.cpp)
 add_executable(mkcurl-client mkcurl-client.cpp)
-install(FILES mkcurl.h DESTINATION include/measurement-kit)
-install(TARGETS mkcurl-client DESTINATION bin)
+target_link_libraries(mkcurl-client mkcurl)
 
 # Testing
 # -------
@@ -57,6 +57,7 @@ set(BUILD_TESTING "ON" CACHE BOOL "Whether to build tests")
 if(${BUILD_TESTING})
   add_executable(unit-tests unit-tests.cpp)
   add_executable(integration-tests integration-tests.cpp)
+  target_link_libraries(integration-tests mkcurl)
   enable_testing()
   add_test(NAME unit_tests COMMAND unit-tests)
   add_test(NAME integration_tests COMMAND integration-tests)
