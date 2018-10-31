@@ -695,17 +695,16 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
       return res.release();
     }
     // The following is very important to allow us to upload any kind of
-    // binary file, otherwise CURL will use strlen(). We need to be careful
-    // with the field size because Win32 does not like it when we try to
-    // use very large field sizes on a 32 bit environment.
-#if defined _WIN32 && !defined _WIN64
-#define MKCURLOPT_POSTFIELDSIZE CURLOPT_POSTFIELDSIZE
-#else
-#define MKCURLOPT_POSTFIELDSIZE CURLOPT_POSTFIELDSIZE_LARGE
-#endif
+    // binary file, otherwise CURL will use strlen(). We do not need to
+    // send more than 2 GiB of data, hence we can safely limit ourself to
+    // using CURLOPT_POSTFIELDSIZE that takes a `long` argument.
+    if (req->body.size() > LONG_MAX) {
+      mkcurl_log(res->logs, "Body larger than LONG_MAX");
+      return res.release();
+    }
     if ((res->error = MKCURL_EASY_SETOPT(
-             handle.get(), MKCURLOPT_POSTFIELDSIZE,
-             req->body.size())) != CURLE_OK) {
+             handle.get(), CURLOPT_POSTFIELDSIZE,
+             (long)req->body.size())) != CURLE_OK) {
       mkcurl_log(res->logs, "curl_easy_setopt(MKCURLOPT_POSTFIELDSIZE) failed");
       return res.release();
     }
