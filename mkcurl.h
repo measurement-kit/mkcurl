@@ -634,15 +634,6 @@ static int mkcurl_debug_cb(CURL *handle,
   return 0;
 }
 
-// mkcurl_read_eof_cb returns immediately EOF when CURL attempts to read
-// the file that is read by default when doing a PUT upload. This way only
-// data set as POST data end up being uploaded. Note that using --data-binary
-// (i.e. CURLOPT_POSTFIELDS) with PUT is documented behaviour, so we are
-// not doing anything obscure here; see <https://ec.haxx.se/http-put.html>.
-static size_t mkcurl_read_eof_cb(char *, size_t, size_t, void *) {
-  return 0;
-}
-
 }  // extern "C"
 
 // TODO(bassosimone):
@@ -693,9 +684,9 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
       mkcurl_log(res->logs, "curl_slist_append() failed");
       return res.release();
     }
-    auto o = (req->method == mkcurl_method::POST) ? CURLOPT_POST : CURLOPT_PUT;
-    if ((res->error = MKCURL_EASY_SETOPT(handle.get(), o, 1L)) != CURLE_OK) {
-      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_P{OS,U}T) failed");
+    if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_POST,
+                                         1L)) != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_POST) failed");
       return res.release();
     }
     if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_POSTFIELDS,
@@ -704,24 +695,23 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
       return res.release();
     }
     // The following is very important to allow us to upload any kind of
-    // binary file, otherwise CURL will use strlen(). We need to be careful
-    // with the field size because Win32 does not like it when we try to
-    // use very large field sizes on a 32 bit environment.
-#if defined _WIN32 && !defined _WIN64
-#define MKCURLOPT_POSTFIELDSIZE CURLOPT_POSTFIELDSIZE
-#else
-#define MKCURLOPT_POSTFIELDSIZE CURLOPT_POSTFIELDSIZE_LARGE
-#endif
+    // binary file, otherwise CURL will use strlen(). We do not need to
+    // send more than 2 GiB of data, hence we can safely limit ourself to
+    // using CURLOPT_POSTFIELDSIZE that takes a `long` argument.
+    if (req->body.size() > LONG_MAX) {
+      mkcurl_log(res->logs, "Body larger than LONG_MAX");
+      return res.release();
+    }
     if ((res->error = MKCURL_EASY_SETOPT(
-             handle.get(), MKCURLOPT_POSTFIELDSIZE,
-             req->body.size())) != CURLE_OK) {
+             handle.get(), CURLOPT_POSTFIELDSIZE,
+             (long)req->body.size())) != CURLE_OK) {
       mkcurl_log(res->logs, "curl_easy_setopt(MKCURLOPT_POSTFIELDSIZE) failed");
       return res.release();
     }
     if (req->method == mkcurl_method::PUT &&
-        (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_READFUNCTION,
-                                         mkcurl_read_eof_cb)) != CURLE_OK) {
-      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_READFUNCTION) failed");
+        (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_CUSTOMREQUEST,
+                                         "PUT")) != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_CUSTOMREQUEST) failed");
       return res.release();
     }
   }
