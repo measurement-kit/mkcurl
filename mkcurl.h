@@ -31,62 +31,62 @@ typedef struct mkcurl_request mkcurl_request_t;
 typedef struct mkcurl_response mkcurl_response_t;
 
 /// mkcurl_request_new_nonnull creates a new request object. This function
-/// calls std::abort if allocating a new request fails.
+/// calls abort if allocating a new request fails.
 mkcurl_request_t *mkcurl_request_new_nonnull(void);
 
 /// mkcurl_request_set_ca_bundle_path_v2 sets the CA bundle path. Typically
-/// this option is required on mobile devices. This function calls std::abort
+/// this option is required on mobile devices. This function calls abort
 /// if passed null arguments by the caller.
 void mkcurl_request_set_ca_bundle_path_v2(mkcurl_request_t *req, const char *p);
 
 /// mkcurl_request_enable_http2_v2 enables using the HTTP2 protocol. If the
 /// HTTP2 backend is not compiled in, the mkcurl_request_perform_nonnull will
-/// fail when trying to use it. This function calls std::abort if passed a
+/// fail when trying to use it. This function calls abort if passed a
 /// null argument by the caller.
 void mkcurl_request_enable_http2_v2(mkcurl_request_t *req);
 
 /// mkcurl_request_set_method_post_v2 sets the method to POST (default is GET).
-/// It calls std::abort if passed a null argument by the caller.
+/// It calls abort if passed a null argument by the caller.
 void mkcurl_request_set_method_post_v2(mkcurl_request_t *req);
 
 /// mkcurl_request_set_method_put_v2 sets the method to PUT (default is GET). It
-/// calls std::abort if passed a null argument by the caller.
+/// calls abort if passed a null argument by the caller.
 void mkcurl_request_set_method_put_v2(mkcurl_request_t *req);
 
 /// mkcurl_request_set_url_v2 sets the request URL. This setting is required
-/// otherwise we will not know what to do. This function calls std::abort
+/// otherwise we will not know what to do. This function calls abort
 /// if it is passed any null argument by the caller.
 void mkcurl_request_set_url_v2(mkcurl_request_t *req, const char *u);
 
 /// mkcurl_request_add_header_v2 adds an header to the request. This function
-/// calls std::abort if it is passed any null argument by the caller.
+/// calls abort if it is passed any null argument by the caller.
 void mkcurl_request_add_header_v2(mkcurl_request_t *req, const char *h);
 
 /// mkcurl_request_set_body_binary_v3 sets the body as a binary vector. This
-/// function calls std::abort if it is passed any null argument by the caller.
+/// function calls abort if it is passed any null argument by the caller.
 void mkcurl_request_set_body_binary_v3(mkcurl_request_t *req,
                                        const uint8_t *b, size_t n);
 
 /// mkcurl_request_set_timeout_v2 sets the timeout. That is, the time after
 /// which the request/response handling loop is interrupted. Setting zero or a
 /// negative value tells CURL to disable such timeout. By default, we configure
-/// CURL using a small, but reasonable timeout. This function calls std::abort
+/// CURL using a small, but reasonable timeout. This function calls abort
 /// if passed a null pointer by the caller. The maximum timeout value that
 /// you can actually set is LONG_MAX. Any value bigger than that will be treated
 /// as you actually passed LONG_MAX to this function.
 void mkcurl_request_set_timeout_v2(mkcurl_request_t *req, int64_t timeout);
 
 /// mkcurl_request_set_proxy_url_v2 sets the proxy URL. To use Tor, set
-/// this option to `socks5h://127.0.0.1:9050`. This function calls std::abort
+/// this option to `socks5h://127.0.0.1:9050`. This function calls abort
 /// if passed any null pointer argument by the caller.
 void mkcurl_request_set_proxy_url_v2(mkcurl_request_t *req, const char *u);
 
 /// mkcurl_request_enable_follow_redirect_v2 enables following redirects. This
-/// function call std::abort if passed any null argument by the caller.
+/// function call abort if passed any null argument by the caller.
 void mkcurl_request_enable_follow_redirect_v2(mkcurl_request_t *req);
 
 /// mkcurl_request_perform_nonnull sends an HTTP request and returns the related
-/// response. It will never return a null pointer. It will call std::abort if
+/// response. It will never return a null pointer. It will call abort if
 /// passed a null argument by the caller.
 mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req);
 
@@ -95,48 +95,48 @@ void mkcurl_request_delete(mkcurl_request_t *req);
 
 /// mkcurl_response_get_error_v2 returns the CURL error that occurred. Remember
 /// the the request MAY have failed even though no error occurred (i.e. you
-/// SHOULD also check the status code). This function will call std::abort if
+/// SHOULD also check the status code). This function will call abort if
 /// passed a null pointer argument by the caller.
 int64_t mkcurl_response_get_error_v2(const mkcurl_response_t *res);
 
 /// mkcurl_response_get_redirect_url_v2 returns the URL to which we were
 /// redirected, if redirection is enabled, otherwise returns an empty string.
-/// This function calls std::abort if passed a null argument.
+/// This function calls abort if passed a null argument.
 const char *mkcurl_response_get_redirect_url_v2(const mkcurl_response_t *res);
 
 /// mkcurl_response_get_status_code_v2 returns the status code. This function
-/// calls std::abort if passed a null pointer by the caller.
+/// calls abort if passed a null pointer by the caller.
 int64_t mkcurl_response_get_status_code_v2(const mkcurl_response_t *res);
 
 /// mkcurl_response_get_body_binary_v3 returns the body as a binary vector. It
-/// calls std::abort if passed a null argument by the caller.
+/// calls abort if passed a null argument by the caller.
 void mkcurl_response_get_body_binary_v3(const mkcurl_response_t *res,
                                         const uint8_t **p, size_t *n);
 
 /// mkcurl_response_get_bytes_sent_v2 returns the bytes sent. Should be a
 /// positive number with the fractional part equal to zero. This function calls
-/// std::abort if passed a null argument by the caller.
+/// abort if passed a null argument by the caller.
 double mkcurl_response_get_bytes_sent_v2(const mkcurl_response_t *res);
 
 /// mkcurl_response_get_bytes_recv_v2 returns the bytes received. Should be a
 /// positive number with the fractional part equal to zero. This function calls
-/// std::abort if passed a null argument by the caller.
+/// abort if passed a null argument by the caller.
 double mkcurl_response_get_bytes_recv_v2(const mkcurl_response_t *res);
 
 /// mkcurl_response_get_logs_binary_v3 returns the logs a binary vector. It
-/// calls std::abort if passed a null argument by the caller. We use a binary
+/// calls abort if passed a null argument by the caller. We use a binary
 /// vector because in principle logs MAY contain non UTF-8 data.
 void mkcurl_response_get_logs_binary_v3(const mkcurl_response_t *res,
                                         const uint8_t **p, size_t *n);
 
 /// mkcurl_response_get_request_headers_v2 returns the request line and all the
 /// headers that were subsequently sent as part of the request. This function
-/// never returns a null pointer. It calls std::abort if @p res is null.
+/// never returns a null pointer. It calls abort if @p res is null.
 const char *mkcurl_response_get_request_headers_v2(
     const mkcurl_response_t *res);
 
 /// mkcurl_response_get_response_headers_binary_v3 returns the response line
-/// and the headers as a binary vector. It calls std::abort if any of its
+/// and the headers as a binary vector. It calls abort if any of its
 /// arguments is a null pointer. We use a binary vector because in principle
 /// the headers MAY contain non UTF-8 data.
 void mkcurl_response_get_response_headers_binary_v3(
@@ -144,12 +144,12 @@ void mkcurl_response_get_response_headers_binary_v3(
 
 /// mkcurl_response_get_certificate_chain_v2 returns the certificate chain as a
 /// sequence of certificates in PEM format separated by empty lines. It will
-/// call std::abort if @p res is a null pointer.
+/// call abort if @p res is a null pointer.
 const char *mkcurl_response_get_certificate_chain_v2(
     const mkcurl_response_t *res);
 
 /// mkcurl_response_get_content_type_v2 returns the contenty type (if available)
-/// or an empty string. Calls std::abort if @p res is a null pointer.
+/// or an empty string. Calls abort if @p res is a null pointer.
 const char *mkcurl_response_get_content_type_v2(const mkcurl_response_t *res);
 
 /// mkcurl_response_delete deletes @p res. Note that @p res MAY be null.
@@ -189,16 +189,16 @@ using mkcurl_response_uptr = std::unique_ptr<mkcurl_response_t,
 void mkcurl_request_movein_body_v2(mkcurl_request_uptr &req, std::string &&b);
 
 /// mkcurl_response_moveout_body_v2 moves the response body out
-/// of @p res. This function calls std::abort if passed a null pointer. Note
+/// of @p res. This function calls abort if passed a null pointer. Note
 /// that the body MAY be a binary string.
 std::string mkcurl_response_moveout_body_v2(mkcurl_response_uptr &res);
 
 /// mkcurl_response_moveout_logs_v2 moves the logs out of @p res. This
-/// function calls std::abort if @p res is null. Note that logs MAY be binary.
+/// function calls abort if @p res is null. Note that logs MAY be binary.
 std::string mkcurl_response_moveout_logs_v2(mkcurl_response_uptr &res);
 
 /// mkcurl_response_moveout_response_headers_v2 moves response headers out
-/// of @p res. This function calls std::abort if @p res is null. Note
+/// of @p res. This function calls abort if @p res is null. Note
 /// that in principle headers MAY be contain non UTF-8 data.
 std::string mkcurl_response_moveout_response_headers_v2(
     mkcurl_response_uptr &res);
@@ -251,8 +251,8 @@ mkcurl_request_t *mkcurl_request_new_nonnull() {
 }
 
 #ifndef MKCURL_ABORT
-// MKCURL_ABORT allows to mock std::abort
-#define MKCURL_ABORT std::abort
+// MKCURL_ABORT allows to mock abort
+#define MKCURL_ABORT abort
 #endif
 
 void mkcurl_request_set_ca_bundle_path_v2(mkcurl_request_t *req, const char *p) {
