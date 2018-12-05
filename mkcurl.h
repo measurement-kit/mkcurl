@@ -152,6 +152,12 @@ const char *mkcurl_response_get_certificate_chain_v2(
 /// or an empty string. Calls abort if @p res is a null pointer.
 const char *mkcurl_response_get_content_type_v2(const mkcurl_response_t *res);
 
+/// mkcurl_response_get_http_version returns the HTTP version being used as a
+/// string. The returned string will be a static string, so you don't have
+/// to worry about owning it. If the version is not known, an empty string is
+/// returned. This function will call abort if passed a null pointer @p res.
+const char *mkcurl_response_get_http_version(const mkcurl_response_t *res);
+
 /// mkcurl_response_delete deletes @p res. Note that @p res MAY be null.
 void mkcurl_response_delete(mkcurl_response_t *res);
 
@@ -358,6 +364,8 @@ struct mkcurl_response {
   std::string certs;
   // content_type is the response content type.
   std::string content_type;
+  // http_version is the HTTP version as a static string.
+  const char *http_version = "";
 };
 
 // mkcurl_log appends @p line to @p logs. It adds information on the current
@@ -453,6 +461,13 @@ const char *mkcurl_response_get_content_type_v2(const mkcurl_response_t *res) {
     MKCURL_ABORT();
   }
   return res->content_type.c_str();
+}
+
+const char *mkcurl_response_get_http_version(const mkcurl_response_t *res) {
+  if (res == nullptr) {
+    MKCURL_ABORT();
+  }
+  return res->http_version;
 }
 
 void mkcurl_response_delete(mkcurl_response_t *res) { delete res; }
@@ -841,6 +856,28 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
       return res.release();
     }
     if (ct != nullptr) res->content_type = ct;
+  }
+  {
+    long httpv = 0L;
+    if ((res->error = MKCURL_EASY_GETINFO(
+            handle.get(), CURLINFO_HTTP_VERSION, &httpv)) != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_getinfo(CURLINFO_HTTP_VERSION) failed");
+      return res.release();
+    }
+    switch (httpv) {
+      case CURL_HTTP_VERSION_1_0:
+        res->http_version = "HTTP/1.0";
+        break;
+      case CURL_HTTP_VERSION_1_1:
+        res->http_version = "HTTP/1.1";
+        break;
+      case CURL_HTTP_VERSION_2_0:
+        res->http_version = "HTTP/2";
+        break;
+      default:
+        res->http_version = "";
+        break;
+    }
   }
   mkcurl_log(res->logs, "curl_easy_perform() success");
   return res.release();

@@ -59,6 +59,9 @@ static void summary(mkcurl_response_uptr &res) {
             << "Content Type: "
             << mkcurl_response_get_content_type_v2(res.get())
             << std::endl
+            << "HTTP version: "
+            << mkcurl_response_get_http_version(res.get())
+            << std::endl
             << "=== END SUMMARY ==="
             << std::endl
             << std::endl;
