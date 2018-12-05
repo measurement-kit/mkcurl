@@ -85,6 +85,10 @@ void mkcurl_request_set_proxy_url_v2(mkcurl_request_t *req, const char *u);
 /// function call abort if passed any null argument by the caller.
 void mkcurl_request_enable_follow_redirect_v2(mkcurl_request_t *req);
 
+/// mkcurl_request_enable_tcp_fastopen enables TCP fastopen (if that is
+/// possible). This function will call abort if @p req is null.
+void mkcurl_request_enable_tcp_fastopen(mkcurl_request_t *req);
+
 /// mkcurl_request_perform_nonnull sends an HTTP request and returns the related
 /// response. It will never return a null pointer. It will call abort if
 /// passed a null argument by the caller.
@@ -230,6 +234,14 @@ enum class mkcurl_method {
   PUT
 };
 
+// TODO(bassosimone): this code can actually be refactored such that the
+// request owns CURL's handle, and we set directly fields inside of it since
+// starting from v7.17.0 CURL copies strings passed to it. (Make sure this
+// also applies to post data, BTW). This different code structure will allow
+// us to possibly reuse the request containing the handle for continuing to
+// use the channel and make more follow up requests. An additional benefit is
+// that this file will be smaller and we'll make it less bureaucratic :^).
+
 // mkcurl_request is an HTTP request.
 struct mkcurl_request {
   // ca_path is the path to the CA bundle to use.
@@ -248,6 +260,8 @@ struct mkcurl_request {
   long timeout = 30;
   // proxy_url is the optional URL of the proxy to use.
   std::string proxy_url;
+  // enable_fastopen will enable TCP fastopen (if possible).
+  bool enable_fastopen = false;
   // follow_redir indicates whether we should follow redirects.
   bool follow_redir = false;
 };
@@ -327,6 +341,13 @@ void mkcurl_request_set_proxy_url_v2(mkcurl_request_t *req, const char *u) {
     MKCURL_ABORT();
   }
   req->proxy_url = u;
+}
+
+void mkcurl_request_enable_tcp_fastopen(mkcurl_request_t *req) {
+  if (req == nullptr) {
+    MKCURL_ABORT();
+  }
+  req->enable_fastopen = true;
 }
 
 void mkcurl_request_enable_follow_redirect_v2(mkcurl_request_t *req) {
@@ -676,6 +697,12 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
       mkcurl_log(res->logs, "curl_slist_append() failed");
       return res.release();
     }
+  }
+  if (req->enable_fastopen &&
+      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_TCP_FASTOPEN,
+                                       1L)) != CURLE_OK) {
+    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_TCP_FASTOPEN) failed");
+    return res.release();
   }
   if (!req->ca_path.empty() &&
       (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_CAINFO,

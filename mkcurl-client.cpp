@@ -28,6 +28,7 @@ static void usage() {
   std::clog << "  --ca-bundle-path <path> : path to OpenSSL CA bundle\n";
   std::clog << "  --data <data>           : send <data> as body\n";
   std::clog << "  --enable-http2          : enable HTTP2 support\n";
+  std::clog << "  --enable-tcp-fastopen   : enable TCP fastopen support\n";
   std::clog << "  --follow-redirect       : enable following redirects\n";
   std::clog << "  --header <header>       : add <header> to headers\n";
   std::clog << "  --post                  : use POST rather than GET\n";
@@ -109,6 +110,8 @@ int main(int, char **argv) {
     for (auto &flag : cmdline.flags()) {
       if (flag == "enable-http2") {
         mkcurl_request_enable_http2_v2(req.get());
+      } else if (flag == "enable-tcp-fastopen") {
+        mkcurl_request_enable_tcp_fastopen(req.get());
       } else if (flag == "follow-redirect") {
         mkcurl_request_enable_follow_redirect_v2(req.get());
       } else if (flag == "post") {
