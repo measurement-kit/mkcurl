@@ -698,7 +698,7 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
   mkcurl_uptr handle;
   {
     CURL *handlep = curl_easy_init();
-    MKMOCK_HOOK(curl_easy_init, handlep);
+    MKMOCK_HOOK_ALLOC(curl_easy_init, handlep, curl_easy_cleanup);
     handle.reset(handlep);
   }
   if (!handle) {
