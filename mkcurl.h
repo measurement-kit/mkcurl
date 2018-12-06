@@ -379,7 +379,9 @@ void mkcurl_request_set_connect_to(mkcurl_request_t *req, const char *ip) {
   if (req == nullptr || ip == nullptr) {
     MKCURL_ABORT();
   }
-  req->connect_to = (std::stringstream{} << "::" << ip << ":").str();
+  std::stringstream ss;
+  ss << "::" << ip << ":";
+  req->connect_to = ss.str();
 }
 
 void mkcurl_request_enable_follow_redirect_v2(mkcurl_request_t *req) {
