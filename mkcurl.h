@@ -89,6 +89,13 @@ void mkcurl_request_enable_follow_redirect_v2(mkcurl_request_t *req);
 /// possible). This function will call abort if @p req is null.
 void mkcurl_request_enable_tcp_fastopen(mkcurl_request_t *req);
 
+/// mkcurl_request_set_connect_to allows to override the IP address to
+/// connect to. The hostname specified in the URL will still be used for
+/// SNI if TLS is to be used. This function will abort if passed
+/// any null pointer argument by the caller. This functionality is exposed
+/// such that OONI can perform its own DNS resolution in some cases.
+void mkcurl_request_set_connect_to(mkcurl_request_t *req, const char *ip);
+
 /// mkcurl_request_perform_nonnull sends an HTTP request and returns the related
 /// response. It will never return a null pointer. It will call abort if
 /// passed a null argument by the caller.
@@ -234,13 +241,29 @@ enum class mkcurl_method {
   PUT
 };
 
-// TODO(bassosimone): this code can actually be refactored such that the
-// request owns CURL's handle, and we set directly fields inside of it since
-// starting from v7.17.0 CURL copies strings passed to it. (Make sure this
-// also applies to post data, BTW). This different code structure will allow
-// us to possibly reuse the request containing the handle for continuing to
-// use the channel and make more follow up requests. An additional benefit is
-// that this file will be smaller and we'll make it less bureaucratic :^).
+// Design note
+// -----------
+//
+// We set parameters in a separate request object. Then we initialise the
+// handle when we're about to perform a request. Starting from CURL v7.17.0
+// CURL will copy the string you pass it, but currently it doesn't copy
+// lists you pass it, and does not copy post data (both of these actually
+// makes sense). So, the code in here will just initialise all the CURL
+// related stuff in a single scope and our separate data structures to hold
+// a request and a response, which helps to separate concerns.
+//
+// A flaw of this approach is that currently it doesn't allow for reusing
+// the same connection. It's unclear whether that's a feature we want to
+// have inside OONI. Maybe we want that for DASH. Maybe we want to implement
+// DASH in golang. So, until we know, let's just keep the handle lifecycle
+// confined inside the function that actually performs the request.
+//
+// If in the future we want to reuse a handle, we can move it to have the
+// same scope of the request object. At that point we can probably also
+// revisit the decision of storing configuration in the request and then
+// using the request to populate the handle. Still, the fact that all
+// the configuration methods of a request currently cannot fail unless
+// we're out of memory is a feature that I would like to retain.
 
 // mkcurl_request is an HTTP request.
 struct mkcurl_request {
@@ -264,6 +287,8 @@ struct mkcurl_request {
   bool enable_fastopen = false;
   // follow_redir indicates whether we should follow redirects.
   bool follow_redir = false;
+  // connect_to is the string to pass to CURLOPT_CONNECT_TO.
+  std::string connect_to;
 };
 
 mkcurl_request_t *mkcurl_request_new_nonnull() {
@@ -348,6 +373,13 @@ void mkcurl_request_enable_tcp_fastopen(mkcurl_request_t *req) {
     MKCURL_ABORT();
   }
   req->enable_fastopen = true;
+}
+
+void mkcurl_request_set_connect_to(mkcurl_request_t *req, const char *ip) {
+  if (req == nullptr || ip == nullptr) {
+    MKCURL_ABORT();
+  }
+  req->connect_to = (std::stringstream{} << "::" << ip << ":").str();
 }
 
 void mkcurl_request_enable_follow_redirect_v2(mkcurl_request_t *req) {
@@ -690,11 +722,27 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
     mkcurl_log(res->logs, "curl_easy_init() failed");
     return res.release();
   }
-  mkcurl_slist headers;
+  mkcurl_slist headers;  // This must have function scope
   for (auto &s : req->headers) {
     if ((headers.p = MKCURL_SLIST_APPEND(headers.p, s.c_str())) == nullptr) {
       res->error = CURLE_OUT_OF_MEMORY;
       mkcurl_log(res->logs, "curl_slist_append() failed");
+      return res.release();
+    }
+  }
+  mkcurl_slist connect_to_settings; // This must have function scope
+  if (!req->connect_to.empty()) {
+    connect_to_settings.p = MKCURL_SLIST_APPEND(
+        connect_to_settings.p, req->connect_to.c_str());
+    if (connect_to_settings.p == nullptr) {
+      res->error = CURLE_OUT_OF_MEMORY;
+      mkcurl_log(res->logs, "curl_slist_append() failed");
+      return res.release();
+    }
+    res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_CONNECT_TO,
+                                    connect_to_settings.p);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_CONNECT_TO) failed");
       return res.release();
     }
   }

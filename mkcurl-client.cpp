@@ -26,6 +26,10 @@ static void usage() {
   std::clog << "a double dash (i.e. --option). Available options:\n";
   std::clog << "\n";
   std::clog << "  --ca-bundle-path <path> : path to OpenSSL CA bundle\n";
+  std::clog << "  --connect-to <ip>       : connects to <ip> while using the\n";
+  std::clog << "                            host in the URL for TLS, if TLS\n";
+  std::clog << "                            is required. Note that IPv6 must\n";
+  std::clog << "                            be quoted using [ and ]\n";
   std::clog << "  --data <data>           : send <data> as body\n";
   std::clog << "  --enable-http2          : enable HTTP2 support\n";
   std::clog << "  --enable-tcp-fastopen   : enable TCP fastopen support\n";
@@ -103,6 +107,7 @@ int main(int, char **argv) {
   {
     argh::parser cmdline;
     cmdline.add_param("ca-bundle-path");
+    cmdline.add_param("connect-to");
     cmdline.add_param("data");
     cmdline.add_param("header");
     cmdline.add_param("timeout");
@@ -127,6 +132,8 @@ int main(int, char **argv) {
     for (auto &param : cmdline.params()) {
       if (param.first == "ca-bundle-path") {
         mkcurl_request_set_ca_bundle_path_v2(req.get(), param.second.c_str());
+      } else if (param.first == "connect-to") {
+        mkcurl_request_set_connect_to(req.get(), param.second.c_str());
       } else if (param.first == "data") {
         mkcurl_request_set_body_binary_v3(req.get(),
                                           (const uint8_t *)param.second.c_str(),
