@@ -234,6 +234,8 @@ std::string mkcurl_response_moveout_response_headers_v2(
 
 #include <curl/curl.h>
 
+#include "mkmock.hpp"
+
 // mkcurl_method enumerates all request methods we know.
 enum class mkcurl_method {
   GET,
@@ -553,31 +555,6 @@ struct mkcurl_slist {
   curl_slist *p = nullptr;
 };
 
-#ifndef MKCURL_EASY_INIT
-// MKCURL_EASY_INIT allows to mock curl_easy_init
-#define MKCURL_EASY_INIT curl_easy_init
-#endif
-
-#ifndef MKCURL_SLIST_APPEND
-// MKCURL_SLIST_APPEND allows to mock curl_slist_append
-#define MKCURL_SLIST_APPEND curl_slist_append
-#endif
-
-#ifndef MKCURL_EASY_SETOPT
-// MKCURL_EASY_SETOPT allows to mock curl_easy_setopt
-#define MKCURL_EASY_SETOPT curl_easy_setopt
-#endif
-
-#ifndef MKCURL_EASY_PERFORM
-// MKCURL_EASY_PERFORM allows to mock curl_easy_perform
-#define MKCURL_EASY_PERFORM curl_easy_perform
-#endif
-
-#ifndef MKCURL_EASY_GETINFO
-// MKCURL_EASY_GETINFO allows to mock curl_easy_getinfo
-#define MKCURL_EASY_GETINFO curl_easy_getinfo
-#endif
-
 extern "C" {
 
 static size_t mkcurl_body_cb(
@@ -718,7 +695,12 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
     MKCURL_ABORT();
   }
   mkcurl_response_uptr res{new mkcurl_response_t{}};  // new doesn't fail
-  mkcurl_uptr handle{MKCURL_EASY_INIT()};
+  mkcurl_uptr handle;
+  {
+    CURL *handlep = curl_easy_init();
+    MKMOCK_HOOK(curl_easy_init, handlep);
+    handle.reset(handlep);
+  }
   if (!handle) {
     res->error = CURLE_OUT_OF_MEMORY;
     mkcurl_log(res->logs, "curl_easy_init() failed");
@@ -726,7 +708,9 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
   }
   mkcurl_slist headers;  // This must have function scope
   for (auto &s : req->headers) {
-    if ((headers.p = MKCURL_SLIST_APPEND(headers.p, s.c_str())) == nullptr) {
+    curl_slist *slistp = curl_slist_append(headers.p, s.c_str());
+    MKMOCK_HOOK(curl_slist_append_headers, slistp);
+    if ((headers.p = slistp) == nullptr) {
       res->error = CURLE_OUT_OF_MEMORY;
       mkcurl_log(res->logs, "curl_slist_append() failed");
       return res.release();
@@ -734,99 +718,137 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
   }
   mkcurl_slist connect_to_settings; // This must have function scope
   if (!req->connect_to.empty()) {
-    connect_to_settings.p = MKCURL_SLIST_APPEND(
+    curl_slist *slistp = curl_slist_append(
         connect_to_settings.p, req->connect_to.c_str());
-    if (connect_to_settings.p == nullptr) {
+    MKMOCK_HOOK(curl_slist_append_connect_to, slistp);
+    if ((connect_to_settings.p = slistp) == nullptr) {
       res->error = CURLE_OUT_OF_MEMORY;
       mkcurl_log(res->logs, "curl_slist_append() failed");
       return res.release();
     }
-    res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_CONNECT_TO,
-                                    connect_to_settings.p);
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_CONNECT_TO,
+                                  connect_to_settings.p);
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_CONNECT_TO, res->error);
     if (res->error != CURLE_OK) {
       mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_CONNECT_TO) failed");
       return res.release();
     }
   }
-  if (req->enable_fastopen &&
-      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_TCP_FASTOPEN,
-                                       1L)) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_TCP_FASTOPEN) failed");
-    return res.release();
+  if (req->enable_fastopen) {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_TCP_FASTOPEN, 1L);
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_TCP_FASTOPEN, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_TCP_FASTOPEN) failed");
+      return res.release();
+    }
   }
-  if (!req->ca_path.empty() &&
-      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_CAINFO,
-                                       req->ca_path.c_str())) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_CAINFO) failed");
-    return res.release();
+  if (!req->ca_path.empty()) {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_CAINFO,
+                                  req->ca_path.c_str());
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_CAINFO, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_CAINFO) failed");
+      return res.release();
+    }
   }
-  if (req->enable_http2 == true &&
-      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_HTTP_VERSION,
-                                       CURL_HTTP_VERSION_2_0)) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_HTTP_VERSION) failed");
-    return res.release();
+  if (req->enable_http2) {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_HTTP_VERSION,
+                                  CURL_HTTP_VERSION_2_0);
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_HTTP_VERSION, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_HTTP_VERSION) failed");
+      return res.release();
+    }
   }
   if (req->method == mkcurl_method::POST ||
       req->method == mkcurl_method::PUT) {
     // Disable sending `Expect: 100 continue`. There are actually good
     // arguments against NOT sending this specific HTTP header by default
     // with P{OS,U}T <https://curl.haxx.se/mail/lib-2017-07/0013.html>.
-    if ((headers.p = MKCURL_SLIST_APPEND(headers.p, "Expect:")) == nullptr) {
-      res->error = CURLE_OUT_OF_MEMORY;
-      mkcurl_log(res->logs, "curl_slist_append() failed");
-      return res.release();
+    {
+      curl_slist *slistp = curl_slist_append(headers.p, "Expect:");
+      MKMOCK_HOOK(curl_slist_append_Expect_header, slistp);
+      if ((headers.p = slistp) == nullptr) {
+        res->error = CURLE_OUT_OF_MEMORY;
+        mkcurl_log(res->logs, "curl_slist_append() failed");
+        return res.release();
+      }
     }
-    if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_POST,
-                                         1L)) != CURLE_OK) {
-      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_POST) failed");
-      return res.release();
+    {
+      res->error = curl_easy_setopt(handle.get(), CURLOPT_POST, 1L);
+      MKMOCK_HOOK(curl_easy_setopt_CURLOPT_POST, res->error);
+      if (res->error != CURLE_OK) {
+        mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_POST) failed");
+        return res.release();
+      }
     }
-    if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_POSTFIELDS,
-                                         req->body.c_str())) != CURLE_OK) {
-      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_POSTFIELDS) failed");
-      return res.release();
+    {
+      res->error = curl_easy_setopt(handle.get(), CURLOPT_POSTFIELDS,
+                                    req->body.c_str());
+      MKMOCK_HOOK(curl_easy_setopt_CURLOPT_POSTFIELDS, res->error);
+      if (res->error != CURLE_OK) {
+        mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_POSTFIELDS) failed");
+        return res.release();
+      }
     }
     // The following is very important to allow us to upload any kind of
     // binary file, otherwise CURL will use strlen(). We do not need to
     // send more than 2 GiB of data, hence we can safely limit ourself to
     // using CURLOPT_POSTFIELDSIZE that takes a `long` argument.
-    if (req->body.size() > LONG_MAX) {
-      mkcurl_log(res->logs, "Body larger than LONG_MAX");
+    {
+      if (req->body.size() > LONG_MAX) {
+        mkcurl_log(res->logs, "Body larger than LONG_MAX");
+        return res.release();
+      }
+      res->error = curl_easy_setopt(handle.get(), CURLOPT_POSTFIELDSIZE,
+                                    (long)req->body.size());
+      MKMOCK_HOOK(curl_easy_setopt_CURLOPT_POSTFIELDSIZE, res->error);
+      if (res->error != CURLE_OK) {
+        mkcurl_log(res->logs, "curl_easy_setopt(MKCURLOPT_POSTFIELDSIZE) failed");
+        return res.release();
+      }
+    }
+    if (req->method == mkcurl_method::PUT) {
+      res->error = curl_easy_setopt(handle.get(), CURLOPT_CUSTOMREQUEST, "PUT");
+      MKMOCK_HOOK(curl_easy_setopt_CURLOPT_CUSTOMREQUEST, res->error);
+      if (res->error) {
+        mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_CUSTOMREQUEST) failed");
+        return res.release();
+      }
+    }
+  }
+  if (headers.p != nullptr) {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_HTTPHEADER, headers.p);
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_HTTPHEADER, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_HTTPHEADER) failed");
       return res.release();
     }
-    if ((res->error = MKCURL_EASY_SETOPT(
-             handle.get(), CURLOPT_POSTFIELDSIZE,
-             (long)req->body.size())) != CURLE_OK) {
-      mkcurl_log(res->logs, "curl_easy_setopt(MKCURLOPT_POSTFIELDSIZE) failed");
-      return res.release();
-    }
-    if (req->method == mkcurl_method::PUT &&
-        (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_CUSTOMREQUEST,
-                                         "PUT")) != CURLE_OK) {
-      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_CUSTOMREQUEST) failed");
+  }
+  {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_URL, req->url.c_str());
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_URL, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_URL) failed");
       return res.release();
     }
   }
-  if (headers.p != nullptr &&
-      (res->error = MKCURL_EASY_SETOPT(
-           handle.get(), CURLOPT_HTTPHEADER, headers.p)) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_HTTPHEADER) failed");
-    return res.release();
+  {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_WRITEFUNCTION,
+                                  mkcurl_body_cb);
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_WRITEFUNCTION, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_WRITEFUNCTION) failed");
+      return res.release();
+    }
   }
-  if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_URL,
-                                       req->url.c_str())) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_URL) failed");
-    return res.release();
-  }
-  if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_WRITEFUNCTION,
-                                       mkcurl_body_cb)) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_WRITEFUNCTION) failed");
-    return res.release();
-  }
-  if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_WRITEDATA,
-                                       res.get())) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_WRITEDATA) failed");
-    return res.release();
+  {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_WRITEDATA, res.get());
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_WRITEDATA, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_WRITEDATA) failed");
+      return res.release();
+    }
   }
   // CURL uses MSG_NOSIGNAL where available (i.e. Linux) and SO_NOSIGPIPE
   // where available (i.e. BSD). This covers all the UNIX operating systems
@@ -838,57 +860,86 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
   // Note: disabling signal handlers makes the default non-threaded CURL
   // resolver non interruptible, so we need to make sure we recompile using
   // either the threaded or the c-ares CURL backend. TODO(bassosimone)
-  if ((res->error = MKCURL_EASY_SETOPT(
-           handle.get(), CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_NOSIGNAL) failed");
-    return res.release();
+  {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_NOSIGNAL, 1L);
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_NOSIGNAL, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_NOSIGNAL) failed");
+      return res.release();
+    }
   }
-  if (req->timeout >= 0 &&
-      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_TIMEOUT,
-                                       req->timeout)) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_TIMEOUT) failed");
-    return res.release();
+  if (req->timeout >= 0) {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_TIMEOUT, req->timeout);
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_TIMEOUT, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_TIMEOUT) failed");
+      return res.release();
+    }
   }
-  if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_DEBUGFUNCTION,
-                                       mkcurl_debug_cb)) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_DEBUGFUNCTION) failed");
-    return res.release();
+  {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_DEBUGFUNCTION,
+                                  mkcurl_debug_cb);
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_DEBUGFUNCTION, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_DEBUGFUNCTION) failed");
+      return res.release();
+    }
   }
-  if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_DEBUGDATA,
-                                       res.get())) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_DEBUGDATA) failed");
-    return res.release();
+  {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_DEBUGDATA, res.get());
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_DEBUGDATA, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_DEBUGDATA) failed");
+      return res.release();
+    }
   }
-  if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_VERBOSE,
-                                       1L)) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_VERBOSE) failed");
-    return res.release();
+  {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_VERBOSE, 1L);
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_VERBOSE, res->error);
+    if (res->error!= CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_VERBOSE) failed");
+      return res.release();
+    }
   }
-  if (!req->proxy_url.empty() &&
-      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_PROXY,
-                                       req->proxy_url.c_str())) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_PROXY) failed");
-    return res.release();
+  if (!req->proxy_url.empty()) {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_PROXY,
+                                  req->proxy_url.c_str());
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_PROXY, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_PROXY) failed");
+      return res.release();
+    }
   }
-  if (req->follow_redir == true &&
-      (res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_FOLLOWLOCATION,
-                                       1L)) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_FOLLOWLOCATION) failed");
-    return res.release();
+  if (req->follow_redir) {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_FOLLOWLOCATION, 1L);
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_FOLLOWLOCATION, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_FOLLOWLOCATION) failed");
+      return res.release();
+    }
   }
-  if ((res->error = MKCURL_EASY_SETOPT(handle.get(), CURLOPT_CERTINFO,
-                                       1L)) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_CERTINFO) failed");
-    return res.release();
+  {
+    res->error = curl_easy_setopt(handle.get(), CURLOPT_CERTINFO, 1L);
+    MKMOCK_HOOK(curl_easy_setopt_CURLOPT_CERTINFO, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_setopt(CURLOPT_CERTINFO) failed");
+      return res.release();
+    }
   }
-  if ((res->error = MKCURL_EASY_PERFORM(handle.get())) != CURLE_OK) {
-    mkcurl_log(res->logs, "curl_easy_perform() failed");
-    return res.release();
+  {
+    res->error = curl_easy_perform(handle.get());
+    MKMOCK_HOOK(curl_easy_perform, res->error);
+    if (res->error != CURLE_OK) {
+      mkcurl_log(res->logs, "curl_easy_perform() failed");
+      return res.release();
+    }
   }
   {
     long status_code = 0;
-    if ((res->error = MKCURL_EASY_GETINFO(
-             handle.get(), CURLINFO_RESPONSE_CODE, &status_code)) != CURLE_OK) {
+    res->error = curl_easy_getinfo(
+        handle.get(), CURLINFO_RESPONSE_CODE, &status_code);
+    MKMOCK_HOOK(curl_easy_getinfo_CURLINFO_RESPONSE_CODE, res->error);
+    if (res->error != CURLE_OK) {
       mkcurl_log(res->logs, "curl_easy_getinfo(CURLINFO_RESPONSE_CODE) failed");
       return res.release();
     }
@@ -896,8 +947,9 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
   }
   {
     char *url = nullptr;
-    if ((res->error = MKCURL_EASY_GETINFO(
-             handle.get(), CURLINFO_REDIRECT_URL, &url)) != CURLE_OK) {
+    res->error = curl_easy_getinfo(handle.get(), CURLINFO_REDIRECT_URL, &url);
+    MKMOCK_HOOK(curl_easy_getinfo_CURLINFO_REDIRECT_URL, res->error);
+    if (res->error != CURLE_OK) {
       mkcurl_log(res->logs, "curl_easy_getinfo(CURLINFO_REDIRECT_URL) failed");
       return res.release();
     }
@@ -905,8 +957,9 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
   }
   {
     curl_certinfo *certinfo = nullptr;
-    if ((res->error = MKCURL_EASY_GETINFO(
-             handle.get(), CURLINFO_CERTINFO, &certinfo)) != CURLE_OK) {
+    res->error = curl_easy_getinfo(handle.get(), CURLINFO_CERTINFO, &certinfo);
+    MKMOCK_HOOK(curl_easy_getinfo_CURLINFO_CERTINFO, res->error);
+    if (res->error != CURLE_OK) {
       mkcurl_log(res->logs, "curl_easy_getinfo(CURLINFO_CERTINFO) failed");
       return res.release();
     }
@@ -927,8 +980,9 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
   }
   {
     char *ct = nullptr;
-    if ((res->error = MKCURL_EASY_GETINFO(
-             handle.get(), CURLINFO_CONTENT_TYPE, &ct)) != CURLE_OK) {
+    res->error = curl_easy_getinfo(handle.get(), CURLINFO_CONTENT_TYPE, &ct);
+    MKMOCK_HOOK(curl_easy_getinfo_CURLINFO_CONTENT_TYPE, res->error);
+    if (res->error != CURLE_OK) {
       mkcurl_log(res->logs, "curl_easy_getinfo(CURLINFO_CONTENT_TYPE) failed");
       return res.release();
     }
@@ -936,8 +990,9 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
   }
   {
     long httpv = 0L;
-    if ((res->error = MKCURL_EASY_GETINFO(
-            handle.get(), CURLINFO_HTTP_VERSION, &httpv)) != CURLE_OK) {
+    res->error = curl_easy_getinfo(handle.get(), CURLINFO_HTTP_VERSION, &httpv);
+    MKMOCK_HOOK(curl_easy_getinfo_CURLINFO_HTTP_VERSION, res->error);
+    if (res->error != CURLE_OK) {
       mkcurl_log(res->logs, "curl_easy_getinfo(CURLINFO_HTTP_VERSION) failed");
       return res.release();
     }
