@@ -28,6 +28,7 @@
 /mkcurl-client.vcxproj
 /mkcurl-client.vcxproj.filters
 /mkcurl.sln
+/mkmock.hpp
 /rules.ninja
 /unit-tests
 /unit-tests.dir/

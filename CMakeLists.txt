@@ -10,6 +10,7 @@ include(MkUtils)
 MkDownloadAdishavitArgh()
 MkDownloadCatchorgCatch2()
 MkDownloadCaBundle()
+MkDownloadMeasurementKitMkMock()
 
 if("${MSVC}")
   MkDownloadMeasurementKitPrebuiltWindowsCurl()
