@@ -96,38 +96,38 @@ TEST_CASE("When curl_slist_append fails for headers") {
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_CAINFO,
-    [](mkcurl_request_uptr &req) {
-      mkcurl_request_set_ca_bundle_path_v2(req.get(), "/etc/ssl/cert.pem");
+    [](mkcurl_request_uptr &r) {
+      mkcurl_request_set_ca_bundle_path_v2(r.get(), "/etc/ssl/cert.pem");
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_HTTP_VERSION,
-    [](mkcurl_request_uptr &req) {
-      mkcurl_request_enable_http2_v2(req.get());
+    [](mkcurl_request_uptr &r) {
+      mkcurl_request_enable_http2_v2(r.get());
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_HTTPHEADER,
-    [](mkcurl_request_uptr &req) {
-      mkcurl_request_add_header_v2(req.get(), "Content-Type: text/plain");
+    [](mkcurl_request_uptr &r) {
+      mkcurl_request_add_header_v2(r.get(), "Content-Type: text/plain");
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_POSTFIELDS,
-    [](mkcurl_request_uptr &req) {
-      mkcurl_request_set_method_post_v2(req.get());
+    [](mkcurl_request_uptr &r) {
+      mkcurl_request_set_method_post_v2(r.get());
       std::string s = "12345 54321";
       mkcurl_request_set_body_binary_v3(
-          req.get(), (const uint8_t *)s.c_str(), s.size());
+          r.get(), (const uint8_t *)s.c_str(), s.size());
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_POST,
-    [](mkcurl_request_uptr &req) {
-      mkcurl_request_set_method_post_v2(req.get());
+    [](mkcurl_request_uptr &r) {
+      mkcurl_request_set_method_post_v2(r.get());
       std::string s = "12345 54321";
       mkcurl_request_set_body_binary_v3(
-          req.get(), (const uint8_t *)s.c_str(), s.size());
+          r.get(), (const uint8_t *)s.c_str(), s.size());
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
@@ -163,14 +163,14 @@ CURL_EASY_SETOPT_FAILURE_TEST(
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_PROXY,
-    [](mkcurl_request_uptr &req) {
-      mkcurl_request_set_proxy_url_v2(req.get(), "socks5h://127.0.0.1:9050");
+    [](mkcurl_request_uptr &r) {
+      mkcurl_request_set_proxy_url_v2(r.get(), "socks5h://127.0.0.1:9050");
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_FOLLOWLOCATION,
-    [](mkcurl_request_uptr &req) {
-      mkcurl_request_enable_follow_redirect_v2(req.get());
+    [](mkcurl_request_uptr &r) {
+      mkcurl_request_enable_follow_redirect_v2(r.get());
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
