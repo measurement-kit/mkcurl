@@ -558,7 +558,7 @@ struct mkcurl_slist {
 extern "C" {
 
 static size_t mkcurl_body_cb(
-    char *ptr, size_t size, size_t nmemb, void *userdata) noexcept {
+    char *ptr, size_t size, size_t nmemb, void *userdata) {
   if (nmemb <= 0) {
     return 0;  // This means "no body"
   }
