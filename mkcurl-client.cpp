@@ -27,8 +27,8 @@ static void usage() {
   std::clog << "\n";
   std::clog << "  --ca-bundle-path <path> : path to OpenSSL CA bundle\n";
   std::clog << "  --connect-to <ip>       : connects to <ip> while using the\n";
-  std::clog << "                            host in the URL for TLS, if TLS\n";
-  std::clog << "                            is required. Note that IPv6 must\n";
+  std::clog << "                            host in the URL for TLS SNI, if\n";
+  std::clog << "                            using https. Note that IPv6 must\n";
   std::clog << "                            be quoted using [ and ]\n";
   std::clog << "  --data <data>           : send <data> as body\n";
   std::clog << "  --enable-http2          : enable HTTP2 support\n";
