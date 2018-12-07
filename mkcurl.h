@@ -709,7 +709,7 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
   mkcurl_slist headers;  // This must have function scope
   for (auto &s : req->headers) {
     curl_slist *slistp = curl_slist_append(headers.p, s.c_str());
-    MKMOCK_HOOK(curl_slist_append_headers, slistp);
+    MKMOCK_HOOK_ALLOC(curl_slist_append_headers, slistp, curl_slist_free_all);
     if ((headers.p = slistp) == nullptr) {
       res->error = CURLE_OUT_OF_MEMORY;
       mkcurl_log(res->logs, "curl_slist_append() failed");
@@ -720,7 +720,8 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
   if (!req->connect_to.empty()) {
     curl_slist *slistp = curl_slist_append(
         connect_to_settings.p, req->connect_to.c_str());
-    MKMOCK_HOOK(curl_slist_append_connect_to, slistp);
+    MKMOCK_HOOK_ALLOC(
+        curl_slist_append_connect_to, slistp, curl_slist_free_all);
     if ((connect_to_settings.p = slistp) == nullptr) {
       res->error = CURLE_OUT_OF_MEMORY;
       mkcurl_log(res->logs, "curl_slist_append() failed");
@@ -767,7 +768,8 @@ mkcurl_response_t *mkcurl_request_perform_nonnull(const mkcurl_request_t *req) {
     // with P{OS,U}T <https://curl.haxx.se/mail/lib-2017-07/0013.html>.
     {
       curl_slist *slistp = curl_slist_append(headers.p, "Expect:");
-      MKMOCK_HOOK(curl_slist_append_Expect_header, slistp);
+      MKMOCK_HOOK_ALLOC(
+          curl_slist_append_Expect_header, slistp, curl_slist_free_all);
       if ((headers.p = slistp) == nullptr) {
         res->error = CURLE_OUT_OF_MEMORY;
         mkcurl_log(res->logs, "curl_slist_append() failed");
