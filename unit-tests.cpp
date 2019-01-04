@@ -36,8 +36,8 @@ MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_HTTPHEADER, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_CAINFO, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_HTTP_VERSION, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_slist_append_Expect_header, curl_slist *);
-MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_POSTFIELDS, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_POST, CURLcode);
+MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_POSTFIELDS, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_WRITEFUNCTION, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_WRITEDATA, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_NOSIGNAL, CURLcode);
@@ -130,6 +130,18 @@ TEST_CASE("When curl_slist_append fails for headers") {
   }
 
 CURL_EASY_SETOPT_FAILURE_TEST(
+    curl_easy_setopt_CURLOPT_CONNECT_TO,
+    [](mk::curl::Request &r) {
+      r.connect_to = "::127.0.0.1:";
+    })
+
+CURL_EASY_SETOPT_FAILURE_TEST(
+    curl_easy_setopt_CURLOPT_TCP_FASTOPEN,
+    [](mk::curl::Request &r) {
+      r.enable_fastopen = true;
+    })
+
+CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_CAINFO,
     [](mk::curl::Request &r) {
       r.ca_path = "/etc/ssl/cert.pem";
@@ -148,6 +160,13 @@ CURL_EASY_SETOPT_FAILURE_TEST(
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
+    curl_easy_setopt_CURLOPT_POST,
+    [](mk::curl::Request &r) {
+      r.method = "POST";
+      r.body = "12345 54321";
+    })
+
+CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_POSTFIELDS,
     [](mk::curl::Request &r) {
       r.method = "POST";
@@ -155,9 +174,16 @@ CURL_EASY_SETOPT_FAILURE_TEST(
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
-    curl_easy_setopt_CURLOPT_POST,
+    curl_easy_setopt_CURLOPT_POSTFIELDSIZE,
     [](mk::curl::Request &r) {
       r.method = "POST";
+      r.body = "12345 54321";
+    })
+
+CURL_EASY_SETOPT_FAILURE_TEST(
+    curl_easy_setopt_CURLOPT_CUSTOMREQUEST,
+    [](mk::curl::Request &r) {
+      r.method = "PUT";
       r.body = "12345 54321";
     })
 
