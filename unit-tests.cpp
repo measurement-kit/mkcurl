@@ -83,6 +83,25 @@ TEST_CASE("When mkcurl_body_cb is passed a NULL userdata") {
   REQUIRE_THROWS(mkcurl_body_cb((char *)0x123456, 17, 4, nullptr));
 }
 
+TEST_CASE("When mkcurl_debug_cb is passed a NULL data") {
+  REQUIRE_THROWS(mkcurl_debug_cb(nullptr, CURLINFO_TEXT, nullptr, 0,
+                                 (void *)0x123456));
+}
+
+TEST_CASE("When mkcurl_debug_cb is passed a NULL userptr") {
+  REQUIRE_THROWS(mkcurl_debug_cb(nullptr, CURLINFO_TEXT, (char *)0x123456,
+                                 0, nullptr));
+}
+
+TEST_CASE("When mkcurl_debug_cb is passed a unexpected curl_infotype") {
+  // Implementation note: here the return value doesn't matter much; what
+  // really matters is that the code does not misbehave.
+  mk::curl::Response resp;
+  std::string data;
+  REQUIRE(mkcurl_debug_cb(nullptr, CURLINFO_END, (char *)data.c_str(),
+                          data.size(), &resp) == 0);
+}
+
 TEST_CASE("When curl_easy_init fails") {
   MKMOCK_WITH_ENABLED_HOOK(curl_easy_init, nullptr, {
     mk::curl::Request req;
