@@ -119,6 +119,24 @@ TEST_CASE("When curl_slist_append fails for headers") {
   });
 }
 
+TEST_CASE("When curl_slist_append fails for connect_to") {
+  MKMOCK_WITH_ENABLED_HOOK(curl_slist_append_connect_to, nullptr, {
+    mk::curl::Request req;
+    req.connect_to = "::127.0.0.1:";
+    mk::curl::Response resp = mk::curl::perform(req);
+    REQUIRE(resp.error == CURLE_OUT_OF_MEMORY);
+  });
+}
+
+TEST_CASE("When curl_slist_append fails for the Expect header") {
+  MKMOCK_WITH_ENABLED_HOOK(curl_slist_append_Expect_header, nullptr, {
+    mk::curl::Request req;
+    req.method = "PUT";
+    mk::curl::Response resp = mk::curl::perform(req);
+    REQUIRE(resp.error == CURLE_OUT_OF_MEMORY);
+  });
+}
+
 #define CURL_EASY_SETOPT_FAILURE_TEST(Tag, Initialize)  \
   TEST_CASE("When " #Tag " fails") {                    \
     MKMOCK_WITH_ENABLED_HOOK(Tag, CURL_LAST, {          \
