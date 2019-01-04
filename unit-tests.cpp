@@ -244,7 +244,7 @@ TEST_CASE("When curl_easy_perform() fails") {
 }
 
 #define CURL_EASY_GETINFO_FAILURE_TEST(Tag)                 \
-  TEST_CASE("When " #Tag ") fails") {                       \
+  TEST_CASE("When " #Tag " fails") {                        \
     MKMOCK_WITH_ENABLED_HOOK(curl_easy_perform, CURLE_OK, { \
       MKMOCK_WITH_ENABLED_HOOK(Tag, CURL_LAST, {            \
         mk::curl::Request req;                              \
@@ -262,3 +262,9 @@ CURL_EASY_GETINFO_FAILURE_TEST(
 
 CURL_EASY_GETINFO_FAILURE_TEST(
     curl_easy_getinfo_CURLINFO_CERTINFO)
+
+CURL_EASY_GETINFO_FAILURE_TEST(
+    curl_easy_getinfo_CURLINFO_CONTENT_TYPE)
+
+CURL_EASY_GETINFO_FAILURE_TEST(
+    curl_easy_getinfo_CURLINFO_HTTP_VERSION)
