@@ -89,6 +89,8 @@ if(${BUILD_TESTING})
            https://httpbin.org/put)
   add_test(NAME connect-to COMMAND
            mkcurl-client --connect-to www.google.com https://www.youtube.com)
-  add_test(NAME tcp-fastopen COMMAND
-           mkcurl-client --enable-tcp-fastopen https://www.kernel.org)
+  if(NOT "${WIN32}")
+    add_test(NAME tcp-fastopen COMMAND
+             mkcurl-client --enable-tcp-fastopen https://www.kernel.org)
+  endif()
 endif()
