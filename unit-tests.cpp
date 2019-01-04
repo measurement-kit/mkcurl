@@ -36,8 +36,8 @@ MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_HTTPHEADER, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_CAINFO, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_HTTP_VERSION, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_slist_append_Expect_header, curl_slist *);
-MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_POSTFIELDS, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_POST, CURLcode);
+MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_POSTFIELDS, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_WRITEFUNCTION, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_WRITEDATA, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_NOSIGNAL, CURLcode);
@@ -59,13 +59,48 @@ MKMOCK_DEFINE_HOOK(curl_easy_getinfo_CURLINFO_CERTINFO, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_getinfo_CURLINFO_HTTP_VERSION, CURLcode);
 
 // Include mkcurl implementation
-// -------------------------------
+// -----------------------------
 
 #define MKCURL_INLINE_IMPL
 #include "mkcurl.hpp"
 
 // Unit tests
 // ----------
+
+TEST_CASE("When mkcurl_body_cb is passed zero nmemb") {
+  REQUIRE(mkcurl_body_cb(nullptr, 17, 0, nullptr) == 0);
+}
+
+TEST_CASE("When mkcurl_body_cb would overflow a size_t") {
+  REQUIRE(mkcurl_body_cb(nullptr, SIZE_MAX / 2, 4, nullptr) == 0);
+}
+
+TEST_CASE("When mkcurl_body_cb is passed a NULL ptr") {
+  REQUIRE_THROWS(mkcurl_body_cb(nullptr, 17, 4, (void *)0x123456));
+}
+
+TEST_CASE("When mkcurl_body_cb is passed a NULL userdata") {
+  REQUIRE_THROWS(mkcurl_body_cb((char *)0x123456, 17, 4, nullptr));
+}
+
+TEST_CASE("When mkcurl_debug_cb is passed a NULL data") {
+  REQUIRE_THROWS(mkcurl_debug_cb(nullptr, CURLINFO_TEXT, nullptr, 0,
+                                 (void *)0x123456));
+}
+
+TEST_CASE("When mkcurl_debug_cb is passed a NULL userptr") {
+  REQUIRE_THROWS(mkcurl_debug_cb(nullptr, CURLINFO_TEXT, (char *)0x123456,
+                                 0, nullptr));
+}
+
+TEST_CASE("When mkcurl_debug_cb is passed a unexpected curl_infotype") {
+  // Implementation note: here the return value doesn't matter much; what
+  // really matters is that the code does not misbehave.
+  mk::curl::Response resp;
+  std::string data;
+  REQUIRE(mkcurl_debug_cb(nullptr, CURLINFO_END, (char *)data.c_str(),
+                          data.size(), &resp) == 0);
+}
 
 TEST_CASE("When curl_easy_init fails") {
   MKMOCK_WITH_ENABLED_HOOK(curl_easy_init, nullptr, {
@@ -84,6 +119,24 @@ TEST_CASE("When curl_slist_append fails for headers") {
   });
 }
 
+TEST_CASE("When curl_slist_append fails for connect_to") {
+  MKMOCK_WITH_ENABLED_HOOK(curl_slist_append_connect_to, nullptr, {
+    mk::curl::Request req;
+    req.connect_to = "::127.0.0.1:";
+    mk::curl::Response resp = mk::curl::perform(req);
+    REQUIRE(resp.error == CURLE_OUT_OF_MEMORY);
+  });
+}
+
+TEST_CASE("When curl_slist_append fails for the Expect header") {
+  MKMOCK_WITH_ENABLED_HOOK(curl_slist_append_Expect_header, nullptr, {
+    mk::curl::Request req;
+    req.method = "PUT";
+    mk::curl::Response resp = mk::curl::perform(req);
+    REQUIRE(resp.error == CURLE_OUT_OF_MEMORY);
+  });
+}
+
 #define CURL_EASY_SETOPT_FAILURE_TEST(Tag, Initialize)  \
   TEST_CASE("When " #Tag " fails") {                    \
     MKMOCK_WITH_ENABLED_HOOK(Tag, CURL_LAST, {          \
@@ -93,6 +146,18 @@ TEST_CASE("When curl_slist_append fails for headers") {
       REQUIRE(resp.error == CURL_LAST);                 \
     });                                                 \
   }
+
+CURL_EASY_SETOPT_FAILURE_TEST(
+    curl_easy_setopt_CURLOPT_CONNECT_TO,
+    [](mk::curl::Request &r) {
+      r.connect_to = "::127.0.0.1:";
+    })
+
+CURL_EASY_SETOPT_FAILURE_TEST(
+    curl_easy_setopt_CURLOPT_TCP_FASTOPEN,
+    [](mk::curl::Request &r) {
+      r.enable_fastopen = true;
+    })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_CAINFO,
@@ -113,6 +178,13 @@ CURL_EASY_SETOPT_FAILURE_TEST(
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
+    curl_easy_setopt_CURLOPT_POST,
+    [](mk::curl::Request &r) {
+      r.method = "POST";
+      r.body = "12345 54321";
+    })
+
+CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_POSTFIELDS,
     [](mk::curl::Request &r) {
       r.method = "POST";
@@ -120,9 +192,16 @@ CURL_EASY_SETOPT_FAILURE_TEST(
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
-    curl_easy_setopt_CURLOPT_POST,
+    curl_easy_setopt_CURLOPT_POSTFIELDSIZE,
     [](mk::curl::Request &r) {
       r.method = "POST";
+      r.body = "12345 54321";
+    })
+
+CURL_EASY_SETOPT_FAILURE_TEST(
+    curl_easy_setopt_CURLOPT_CUSTOMREQUEST,
+    [](mk::curl::Request &r) {
+      r.method = "PUT";
       r.body = "12345 54321";
     })
 
@@ -183,7 +262,7 @@ TEST_CASE("When curl_easy_perform() fails") {
 }
 
 #define CURL_EASY_GETINFO_FAILURE_TEST(Tag)                 \
-  TEST_CASE("When " #Tag ") fails") {                       \
+  TEST_CASE("When " #Tag " fails") {                        \
     MKMOCK_WITH_ENABLED_HOOK(curl_easy_perform, CURLE_OK, { \
       MKMOCK_WITH_ENABLED_HOOK(Tag, CURL_LAST, {            \
         mk::curl::Request req;                              \
@@ -201,3 +280,9 @@ CURL_EASY_GETINFO_FAILURE_TEST(
 
 CURL_EASY_GETINFO_FAILURE_TEST(
     curl_easy_getinfo_CURLINFO_CERTINFO)
+
+CURL_EASY_GETINFO_FAILURE_TEST(
+    curl_easy_getinfo_CURLINFO_CONTENT_TYPE)
+
+CURL_EASY_GETINFO_FAILURE_TEST(
+    curl_easy_getinfo_CURLINFO_HTTP_VERSION)

@@ -96,9 +96,11 @@ int main(int, char **argv) {
       } else if (flag == "put") {
         req.method = "PUT";
       } else {
+        // LCOV_EXCL_START
         std::clog << "fatal: unrecognized flag: " << flag << std::endl;
         usage();
         exit(EXIT_FAILURE);
+        // LCOV_EXCL_STOP
       }
     }
     for (auto &param : cmdline.params()) {
@@ -119,22 +121,28 @@ int main(int, char **argv) {
         // SHOULD instead use strtonum().
         req.timeout = atoi(param.second.c_str());
       } else {
+        // LCOV_EXCL_START
         std::clog << "fatal: unrecognized param: " << param.first << std::endl;
         usage();
         exit(EXIT_FAILURE);
+        // LCOV_EXCL_STOP
       }
     }
     auto sz = cmdline.pos_args().size();
     if (sz != 2) {
+      // LCOV_EXCL_START
       usage();
       exit(EXIT_FAILURE);
+      // LCOV_EXCL_STOP
     }
     req.url = cmdline.pos_args()[1];
   }
   mk::curl::Response res = mk::curl::perform(req);
   summary(res);
   if (res.error != 0 || res.status_code != 200) {
+    // LCOV_EXCL_START
     std::clog << "FATAL: the request did not succeed" << std::endl;
     exit(EXIT_FAILURE);
+    // LCOV_EXCL_STOP
   }
 }

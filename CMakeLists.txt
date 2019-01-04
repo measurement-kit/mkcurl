@@ -70,6 +70,9 @@ if(${BUILD_TESTING})
            https://www.kernel.org)
   add_test(NAME http11_test COMMAND
            mkcurl-client https://ooni.torproject.org)
+  add_test(NAME using_timeout COMMAND
+           mkcurl-client --timeout 10 --follow-redirect
+           https://www.facebook.com)
   # TODO(bassosimone): compile cURL for Windows with http2 support
   if(NOT "${WIN32}")
     add_test(NAME http2_test COMMAND
@@ -81,4 +84,13 @@ if(${BUILD_TESTING})
            mkcurl-client --post --header "Content-Type: application/json"
            --data "{\"net-tests\":[{\"input-hashes\":null,\"name\":\"http_invalid_request_line\",\"test-helpers\":[\"tcp-echo\"],\"version\":\"0.0.3\"}]}"
            https://bouncer.ooni.io/bouncer/net-tests)
+  add_test(NAME put COMMAND
+           mkcurl-client --put --header "Accept: application/json"
+           https://httpbin.org/put)
+  add_test(NAME connect-to COMMAND
+           mkcurl-client --connect-to www.google.com https://www.youtube.com)
+  if(NOT "${WIN32}")
+    add_test(NAME tcp-fastopen COMMAND
+             mkcurl-client --enable-tcp-fastopen https://www.kernel.org)
+  endif()
 endif()
