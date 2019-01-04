@@ -1,14 +1,13 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "mkcurl.h"
+#include "mkcurl.hpp"
 
 TEST_CASE("We can move in and move out possibly binary data") {
-  mkcurl_request_uptr request{mkcurl_request_new_nonnull()};
-  mkcurl_request_set_method_post_v2(request.get());
-  mkcurl_request_add_header_v2(request.get(), "Content-Type: application/json");
-  mkcurl_request_set_url_v2(
-      request.get(), "https://bouncer.ooni.io/bouncer/net-tests");
+  mk::curl::Request request;
+  request.method = "POST";
+  request.headers.push_back("Content-Type: application/json");
+  request.url = "https://bouncer.ooni.io/bouncer/net-tests";
   // clang-format off
   std::string request_body = R"({
     "net-tests":[{
@@ -19,19 +18,10 @@ TEST_CASE("We can move in and move out possibly binary data") {
     }]
   })";
   // clang-format on
-  mkcurl_request_movein_body_v2(request, std::move(request_body));
-  mkcurl_response_uptr response{mkcurl_request_perform_nonnull(request.get())};
-  REQUIRE(mkcurl_response_get_status_code_v2(response.get()) == 200);
-  {
-    std::string body = mkcurl_response_moveout_body_v2(response);
-    REQUIRE(body.size() > 0);
-  }
-  {
-    std::string logs = mkcurl_response_moveout_logs_v2(response);
-    REQUIRE(logs.size() > 0);
-  }
-  {
-    std::string rh = mkcurl_response_moveout_response_headers_v2(response);
-    REQUIRE(rh.size() > 0);
-  }
+  request.body = std::move(request_body);
+  mk::curl::Response response = mk::curl::perform(request);
+  REQUIRE(response.status_code == 200);
+  REQUIRE(response.body.size() > 0);
+  REQUIRE(response.logs.size() > 0);
+  REQUIRE(response.response_headers.size() > 0);
 }

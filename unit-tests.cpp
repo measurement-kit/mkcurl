@@ -12,14 +12,14 @@
 // MkCurlAbort is thrown instead of calling abort() such that we can verify
 // with unit tests that invalid arguments are correctly handled.
 struct MkCurlAbort : public std::exception {
-	using std::exception::exception;
+  using std::exception::exception;
 };
 
 // MKCURL_ABORT overrides the default MKCURK_ABORT to throw MkCurlAbort.
 #define MKCURL_ABORT() throw MkCurlAbort()
 
-// By setting MKMOCK_HOOK_ENABLE and including mkmock.hpp we cause mkcurl.h to
-// compile with mocking enabled so that we can run unit tests.
+// By setting MKMOCK_HOOK_ENABLE and including mkmock.hpp we cause mkcurl.hpp
+// to compile with mocking enabled so that we can run unit tests.
 #define MKMOCK_HOOK_ENABLE
 #include "mkmock.hpp"
 
@@ -62,139 +62,135 @@ MKMOCK_DEFINE_HOOK(curl_easy_getinfo_CURLINFO_HTTP_VERSION, CURLcode);
 // -------------------------------
 
 #define MKCURL_INLINE_IMPL
-#include "mkcurl.h"
+#include "mkcurl.hpp"
 
 // Unit tests
 // ----------
 
 TEST_CASE("When curl_easy_init fails") {
   MKMOCK_WITH_ENABLED_HOOK(curl_easy_init, nullptr, {
-    mkcurl_request_uptr req{mkcurl_request_new_nonnull()};
-    mkcurl_response_uptr resp{mkcurl_request_perform_nonnull(req.get())};
-    REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURLE_OUT_OF_MEMORY);
+    mk::curl::Request req;
+    mk::curl::Response resp = mk::curl::perform(req);
+    REQUIRE(resp.error == CURLE_OUT_OF_MEMORY);
   });
 }
 
 TEST_CASE("When curl_slist_append fails for headers") {
   MKMOCK_WITH_ENABLED_HOOK(curl_slist_append_headers, nullptr, {
-    mkcurl_request_uptr req{mkcurl_request_new_nonnull()};
-    mkcurl_request_add_header_v2(req.get(), "Content-Type: text/plain");
-    mkcurl_response_uptr resp{mkcurl_request_perform_nonnull(req.get())};
-    REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURLE_OUT_OF_MEMORY);
+    mk::curl::Request req;
+    req.headers.push_back("Content-Type: text/plain");
+    mk::curl::Response resp = mk::curl::perform(req);
+    REQUIRE(resp.error == CURLE_OUT_OF_MEMORY);
   });
 }
 
-#define CURL_EASY_SETOPT_FAILURE_TEST(Tag, Initialize)                      \
-  TEST_CASE("When " #Tag " fails") {                                        \
-    MKMOCK_WITH_ENABLED_HOOK(Tag, CURL_LAST, {                              \
-      mkcurl_request_uptr req{mkcurl_request_new_nonnull()};                \
-      Initialize(req);                                                      \
-      mkcurl_response_uptr resp{mkcurl_request_perform_nonnull(req.get())}; \
-      REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURL_LAST);       \
-    });                                                                     \
+#define CURL_EASY_SETOPT_FAILURE_TEST(Tag, Initialize)  \
+  TEST_CASE("When " #Tag " fails") {                    \
+    MKMOCK_WITH_ENABLED_HOOK(Tag, CURL_LAST, {          \
+      mk::curl::Request req;                            \
+      Initialize(req);                                  \
+      mk::curl::Response resp = mk::curl::perform(req); \
+      REQUIRE(resp.error == CURL_LAST);                 \
+    });                                                 \
   }
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_CAINFO,
-    [](mkcurl_request_uptr &r) {
-      mkcurl_request_set_ca_bundle_path_v2(r.get(), "/etc/ssl/cert.pem");
+    [](mk::curl::Request &r) {
+      r.ca_path = "/etc/ssl/cert.pem";
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_HTTP_VERSION,
-    [](mkcurl_request_uptr &r) {
-      mkcurl_request_enable_http2_v2(r.get());
+    [](mk::curl::Request &r) {
+      r.enable_http2 = true;
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_HTTPHEADER,
-    [](mkcurl_request_uptr &r) {
-      mkcurl_request_add_header_v2(r.get(), "Content-Type: text/plain");
+    [](mk::curl::Request &r) {
+      r.headers.push_back("Content-Type: text/plain");
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_POSTFIELDS,
-    [](mkcurl_request_uptr &r) {
-      mkcurl_request_set_method_post_v2(r.get());
-      std::string s = "12345 54321";
-      mkcurl_request_set_body_binary_v3(
-          r.get(), (const uint8_t *)s.c_str(), s.size());
+    [](mk::curl::Request &r) {
+      r.method = "POST";
+      r.body = "12345 54321";
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_POST,
-    [](mkcurl_request_uptr &r) {
-      mkcurl_request_set_method_post_v2(r.get());
-      std::string s = "12345 54321";
-      mkcurl_request_set_body_binary_v3(
-          r.get(), (const uint8_t *)s.c_str(), s.size());
+    [](mk::curl::Request &r) {
+      r.method = "POST";
+      r.body = "12345 54321";
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
-    curl_easy_setopt_CURLOPT_URL, [](mkcurl_request_uptr &) {})
+    curl_easy_setopt_CURLOPT_URL, [](mk::curl::Request &) {})
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_WRITEFUNCTION,
-    [](mkcurl_request_uptr &) {})
+    [](mk::curl::Request &) {})
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_WRITEDATA,
-    [](mkcurl_request_uptr &) {})
+    [](mk::curl::Request &) {})
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_NOSIGNAL,
-    [](mkcurl_request_uptr &) {})
+    [](mk::curl::Request &) {})
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_TIMEOUT,
-    [](mkcurl_request_uptr &) {})
+    [](mk::curl::Request &) {})
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_DEBUGFUNCTION,
-    [](mkcurl_request_uptr &) {})
+    [](mk::curl::Request &) {})
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_DEBUGDATA,
-    [](mkcurl_request_uptr &) {})
+    [](mk::curl::Request &) {})
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_VERBOSE,
-    [](mkcurl_request_uptr &) {})
+    [](mk::curl::Request &) {})
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_PROXY,
-    [](mkcurl_request_uptr &r) {
-      mkcurl_request_set_proxy_url_v2(r.get(), "socks5h://127.0.0.1:9050");
+    [](mk::curl::Request &r) {
+      r.proxy_url = "socks5h://127.0.0.1:9050";
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_FOLLOWLOCATION,
-    [](mkcurl_request_uptr &r) {
-      mkcurl_request_enable_follow_redirect_v2(r.get());
+    [](mk::curl::Request &r) {
+      r.follow_redir = true;
     })
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_CERTINFO,
-    [](mkcurl_request_uptr &) {})
+    [](mk::curl::Request &) {})
 
 TEST_CASE("When curl_easy_perform() fails") {
   MKMOCK_WITH_ENABLED_HOOK(curl_easy_perform, CURL_LAST, {
-    mkcurl_request_uptr req{mkcurl_request_new_nonnull()};
-    mkcurl_request_add_header_v2(req.get(), "Content-Type: text/plain");
-    mkcurl_response_uptr resp{mkcurl_request_perform_nonnull(req.get())};
-    REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURL_LAST);
+    mk::curl::Request req;
+    req.headers.push_back("Content-Type: text/plain");
+    mk::curl::Response resp = mk::curl::perform(req);
+    REQUIRE(resp.error == CURL_LAST);
   });
 }
 
-#define CURL_EASY_GETINFO_FAILURE_TEST(Tag)                                   \
-  TEST_CASE("When " #Tag ") fails") {                                         \
-    MKMOCK_WITH_ENABLED_HOOK(curl_easy_perform, CURLE_OK, {                   \
-      MKMOCK_WITH_ENABLED_HOOK(Tag, CURL_LAST, {                              \
-        mkcurl_request_uptr req{mkcurl_request_new_nonnull()};                \
-        mkcurl_response_uptr resp{mkcurl_request_perform_nonnull(req.get())}; \
-        REQUIRE(mkcurl_response_get_error_v2(resp.get()) == CURL_LAST);       \
-      });                                                                     \
-    });                                                                       \
+#define CURL_EASY_GETINFO_FAILURE_TEST(Tag)                 \
+  TEST_CASE("When " #Tag ") fails") {                       \
+    MKMOCK_WITH_ENABLED_HOOK(curl_easy_perform, CURLE_OK, { \
+      MKMOCK_WITH_ENABLED_HOOK(Tag, CURL_LAST, {            \
+        mk::curl::Request req;                              \
+        mk::curl::Response resp = mk::curl::perform(req);   \
+        REQUIRE(resp.error == CURL_LAST);                   \
+      });                                                   \
+    });                                                     \
   }
 
 CURL_EASY_GETINFO_FAILURE_TEST(

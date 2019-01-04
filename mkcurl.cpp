@@ -1,2 +1,2 @@
 #define MKCURL_INLINE_IMPL
-#include "mkcurl.h"
+#include "mkcurl.hpp"
