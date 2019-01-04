@@ -435,6 +435,10 @@ Response perform(const Request &req) noexcept {
         return res;
       }
     }
+  } else if (req.method != "GET") {
+    res.error = CURLE_BAD_FUNCTION_ARGUMENT;
+    mkcurl_log(res.logs, "unsupported request method");
+    return res;
   }
   if (headers.p != nullptr) {
     res.error = curl_easy_setopt(handle.get(), CURLOPT_HTTPHEADER, headers.p);

@@ -286,3 +286,10 @@ CURL_EASY_GETINFO_FAILURE_TEST(
 
 CURL_EASY_GETINFO_FAILURE_TEST(
     curl_easy_getinfo_CURLINFO_HTTP_VERSION)
+
+TEST_CASE("When we don't support the request method") {
+  mk::curl::Request req;
+  req.method = "HEAD";
+  mk::curl::Response resp = mk::curl::perform(req);
+  REQUIRE(resp.error == CURLE_BAD_FUNCTION_ARGUMENT);
+}
