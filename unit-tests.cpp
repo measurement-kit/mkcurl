@@ -59,13 +59,29 @@ MKMOCK_DEFINE_HOOK(curl_easy_getinfo_CURLINFO_CERTINFO, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_getinfo_CURLINFO_HTTP_VERSION, CURLcode);
 
 // Include mkcurl implementation
-// -------------------------------
+// -----------------------------
 
 #define MKCURL_INLINE_IMPL
 #include "mkcurl.hpp"
 
 // Unit tests
 // ----------
+
+TEST_CASE("When mkcurl_body_cb is passed zero nmemb") {
+  REQUIRE(mkcurl_body_cb(nullptr, 17, 0, nullptr) == 0);
+}
+
+TEST_CASE("When mkcurl_body_cb would overflow a size_t") {
+  REQUIRE(mkcurl_body_cb(nullptr, SIZE_MAX / 2, 4, nullptr) == 0);
+}
+
+TEST_CASE("When mkcurl_body_cb is passed a NULL ptr") {
+  REQUIRE_THROWS(mkcurl_body_cb(nullptr, 17, 4, (void *)0x123456));
+}
+
+TEST_CASE("When mkcurl_body_cb is passed a NULL userdata") {
+  REQUIRE_THROWS(mkcurl_body_cb((char *)0x123456, 17, 4, nullptr));
+}
 
 TEST_CASE("When curl_easy_init fails") {
   MKMOCK_WITH_ENABLED_HOOK(curl_easy_init, nullptr, {
