@@ -60,11 +60,8 @@ if(${BUILD_TESTING})
   if("${WIN32}")
     target_compile_options(unit-tests PRIVATE /EHs)  # exceptions in extern "C"
   endif()
-  add_executable(integration-tests integration-tests.cpp)
-  target_link_libraries(integration-tests mkcurl)
   enable_testing()
   add_test(NAME unit_tests COMMAND unit-tests)
-  add_test(NAME integration_tests COMMAND integration-tests)
   add_test(NAME external_ca COMMAND
            mkcurl-client --ca-bundle-path ./ca-bundle.pem
            https://www.kernel.org)

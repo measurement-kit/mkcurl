@@ -21,7 +21,6 @@
 /catch.hpp
 /cmake_install.cmake
 /install_manifest.txt
-/integration-tests
 /libmkcurl.a
 /mkcurl-client
 /mkcurl-client.dir/
