@@ -319,13 +319,6 @@ static const char *HTTPVersionString(long httpv) noexcept {
   return "";
 }
 
-// TODO(bassosimone):
-//
-// 1. Allow to disable CURLOPT_SSL_VERIFYPEER
-//
-// 2. Allow to disable CURLOPT_SSL_VERIFYHOST
-//
-// 3. Allow to set a specific SSL version with CURLOPT_SSLVERSION
 Response perform(const Request &req) noexcept {
   mkcurl_uptr handle;
   {
@@ -496,11 +489,12 @@ Response perform(const Request &req) noexcept {
   // that we care about (Android, Linux, iOS, macOS). We additionally need
   // to avoid signals because we are acting as a library that is integrated
   // into several different languages, so stealing the signal handler from
-  // the language MAY have a negative impact.
-  //
-  // Note: disabling signal handlers makes the default non-threaded CURL
-  // resolver non interruptible, so we need to make sure we recompile using
-  // either the threaded or the c-ares CURL backend. TODO(bassosimone)
+  // the language MAY have a negative impact. However, disabling signal
+  // handlers will also make the getaddrinfo() resolver in cURL block until
+  // getaddrinfo() returns, unless we're using the threaded or the c-ares
+  // DNS backend. Since the threaded resolver should now be used in most
+  // Unix distros, we need mainly to remember to enable it when we're cross
+  // compiling cURL in measurement-kit/script-build-unix.
   {
     res.error = curl_easy_setopt(handle.get(), CURLOPT_NOSIGNAL, 1L);
     MKMOCK_HOOK(curl_easy_setopt_CURLOPT_NOSIGNAL, res.error);
