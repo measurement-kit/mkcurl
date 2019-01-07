@@ -430,8 +430,11 @@ Response perform(const Request &req) noexcept {
     // send more than 2 GiB of data, hence we can safely limit ourself to
     // using CURLOPT_POSTFIELDSIZE that takes a `long` argument.
     {
-      if (req.body.size() > LONG_MAX) {
+      bool body_size_overflow = (req.body.size() > LONG_MAX);
+      MKMOCK_HOOK(body_size_overflow_inject, body_size_overflow);
+      if (body_size_overflow) {
         mkcurl_log(res.logs, "Body larger than LONG_MAX");
+        res.error = CURLE_FILESIZE_EXCEEDED;
         return res;
       }
       res.error = curl_easy_setopt(handle.get(), CURLOPT_POSTFIELDSIZE,

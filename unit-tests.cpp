@@ -32,6 +32,7 @@ MKMOCK_DEFINE_HOOK(curl_slist_append_connect_to, curl_slist *);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_CONNECT_TO, CURLcode);
 
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_URL, CURLcode);
+MKMOCK_DEFINE_HOOK(body_size_overflow_inject, bool);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_POSTFIELDSIZE, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_CUSTOMREQUEST, CURLcode);
 MKMOCK_DEFINE_HOOK(curl_easy_setopt_CURLOPT_HTTPHEADER, CURLcode);
@@ -192,6 +193,16 @@ CURL_EASY_SETOPT_FAILURE_TEST(
       r.method = "POST";
       r.body = "12345 54321";
     })
+
+TEST_CASE("When the body size would overflow a long integer") {
+  MKMOCK_WITH_ENABLED_HOOK(body_size_overflow_inject, true, {
+    mk::curl::Request req;
+    req.method = "POST";
+    req.body = "12345 54321";
+    mk::curl::Response resp = mk::curl::perform(req);
+    REQUIRE(resp.error == CURLE_FILESIZE_EXCEEDED);
+  });
+}
 
 CURL_EASY_SETOPT_FAILURE_TEST(
     curl_easy_setopt_CURLOPT_POSTFIELDSIZE,
