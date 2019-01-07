@@ -304,6 +304,21 @@ static int mkcurl_debug_cb(CURL *handle,
 namespace mk {
 namespace curl {
 
+// HTTPVersionString returns a string representation of the cURL HTTP
+// version string in @p httpv. If @p httpv has an unknown value, the
+// return value is the empty string.
+static const char *HTTPVersionString(long httpv) noexcept {
+  switch (httpv) {
+    case CURL_HTTP_VERSION_1_0:
+      return "HTTP/1.0";
+    case CURL_HTTP_VERSION_1_1:
+      return "HTTP/1.1";
+    case CURL_HTTP_VERSION_2_0:
+      return "HTTP/2";
+  }
+  return "";
+}
+
 // TODO(bassosimone):
 //
 // 1. Allow to disable CURLOPT_SSL_VERIFYPEER
@@ -622,20 +637,7 @@ Response perform(const Request &req) noexcept {
       mkcurl_log(res.logs, "curl_easy_getinfo(CURLINFO_HTTP_VERSION) failed");
       return res;
     }
-    switch (httpv) {
-      case CURL_HTTP_VERSION_1_0:
-        res.http_version = "HTTP/1.0";
-        break;
-      case CURL_HTTP_VERSION_1_1:
-        res.http_version = "HTTP/1.1";
-        break;
-      case CURL_HTTP_VERSION_2_0:
-        res.http_version = "HTTP/2";
-        break;
-      default:
-        res.http_version = "";
-        break;
-    }
+    res.http_version = HTTPVersionString(httpv);
   }
   mkcurl_log(res.logs, "curl_easy_perform() success");
   return res;

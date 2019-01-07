@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include <exception>
 #include <mutex>
 
@@ -292,4 +294,13 @@ TEST_CASE("When we don't support the request method") {
   req.method = "HEAD";
   mk::curl::Response resp = mk::curl::perform(req);
   REQUIRE(resp.error == CURLE_BAD_FUNCTION_ARGUMENT);
+}
+
+TEST_CASE("HTTPVersionString works correctly") {
+  REQUIRE(strcmp(mk::curl::HTTPVersionString(
+                     CURL_HTTP_VERSION_1_0),
+                 "HTTP/1.0") == 0);
+  REQUIRE(strcmp(mk::curl::HTTPVersionString(
+                     CURL_HTTP_VERSION_LAST),
+                 "") == 0);
 }
