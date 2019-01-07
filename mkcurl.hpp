@@ -304,13 +304,21 @@ static int mkcurl_debug_cb(CURL *handle,
 namespace mk {
 namespace curl {
 
-// TODO(bassosimone):
-//
-// 1. Allow to disable CURLOPT_SSL_VERIFYPEER
-//
-// 2. Allow to disable CURLOPT_SSL_VERIFYHOST
-//
-// 3. Allow to set a specific SSL version with CURLOPT_SSLVERSION
+// HTTPVersionString returns a string representation of the cURL HTTP
+// version string in @p httpv. If @p httpv has an unknown value, the
+// return value is the empty string.
+static const char *HTTPVersionString(long httpv) noexcept {
+  switch (httpv) {
+    case CURL_HTTP_VERSION_1_0:
+      return "HTTP/1.0";
+    case CURL_HTTP_VERSION_1_1:
+      return "HTTP/1.1";
+    case CURL_HTTP_VERSION_2_0:
+      return "HTTP/2";
+  }
+  return "";
+}
+
 Response perform(const Request &req) noexcept {
   mkcurl_uptr handle;
   {
@@ -415,8 +423,11 @@ Response perform(const Request &req) noexcept {
     // send more than 2 GiB of data, hence we can safely limit ourself to
     // using CURLOPT_POSTFIELDSIZE that takes a `long` argument.
     {
-      if (req.body.size() > LONG_MAX) {
+      bool body_size_overflow = (req.body.size() > LONG_MAX);
+      MKMOCK_HOOK(body_size_overflow_inject, body_size_overflow);
+      if (body_size_overflow) {
         mkcurl_log(res.logs, "Body larger than LONG_MAX");
+        res.error = CURLE_FILESIZE_EXCEEDED;
         return res;
       }
       res.error = curl_easy_setopt(handle.get(), CURLOPT_POSTFIELDSIZE,
@@ -478,11 +489,12 @@ Response perform(const Request &req) noexcept {
   // that we care about (Android, Linux, iOS, macOS). We additionally need
   // to avoid signals because we are acting as a library that is integrated
   // into several different languages, so stealing the signal handler from
-  // the language MAY have a negative impact.
-  //
-  // Note: disabling signal handlers makes the default non-threaded CURL
-  // resolver non interruptible, so we need to make sure we recompile using
-  // either the threaded or the c-ares CURL backend. TODO(bassosimone)
+  // the language MAY have a negative impact. However, disabling signal
+  // handlers will also make the getaddrinfo() resolver in cURL block until
+  // getaddrinfo() returns, unless we're using the threaded or the c-ares
+  // DNS backend. Since the threaded resolver should now be used in most
+  // Unix distros, we need mainly to remember to enable it when we're cross
+  // compiling cURL in measurement-kit/script-build-unix.
   {
     res.error = curl_easy_setopt(handle.get(), CURLOPT_NOSIGNAL, 1L);
     MKMOCK_HOOK(curl_easy_setopt_CURLOPT_NOSIGNAL, res.error);
@@ -622,20 +634,7 @@ Response perform(const Request &req) noexcept {
       mkcurl_log(res.logs, "curl_easy_getinfo(CURLINFO_HTTP_VERSION) failed");
       return res;
     }
-    switch (httpv) {
-      case CURL_HTTP_VERSION_1_0:
-        res.http_version = "HTTP/1.0";
-        break;
-      case CURL_HTTP_VERSION_1_1:
-        res.http_version = "HTTP/1.1";
-        break;
-      case CURL_HTTP_VERSION_2_0:
-        res.http_version = "HTTP/2";
-        break;
-      default:
-        res.http_version = "";
-        break;
-    }
+    res.http_version = HTTPVersionString(httpv);
   }
   mkcurl_log(res.logs, "curl_easy_perform() success");
   return res;
