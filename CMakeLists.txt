@@ -61,7 +61,7 @@ if(${BUILD_TESTING})
     target_compile_options(tests PRIVATE /EHs)  # exceptions in extern "C"
   endif()
   enable_testing()
-  add_test(NAME unit_tests COMMAND tests)
+  add_test(NAME mocked_tests COMMAND tests)
   add_test(NAME external_ca COMMAND
            mkcurl-client --ca-bundle-path ./ca-bundle.pem
            https://www.kernel.org)
