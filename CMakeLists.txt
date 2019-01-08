@@ -56,12 +56,12 @@ target_link_libraries(mkcurl-client mkcurl)
 
 set(BUILD_TESTING "ON" CACHE BOOL "Whether to build tests")
 if(${BUILD_TESTING})
-  add_executable(unit-tests unit-tests.cpp)
+  add_executable(tests tests.cpp)
   if("${WIN32}")
-    target_compile_options(unit-tests PRIVATE /EHs)  # exceptions in extern "C"
+    target_compile_options(tests PRIVATE /EHs)  # exceptions in extern "C"
   endif()
   enable_testing()
-  add_test(NAME unit_tests COMMAND unit-tests)
+  add_test(NAME unit_tests COMMAND tests)
   add_test(NAME external_ca COMMAND
            mkcurl-client --ca-bundle-path ./ca-bundle.pem
            https://www.kernel.org)
