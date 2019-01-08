@@ -29,9 +29,9 @@
 /mkcurl.sln
 /mkmock.hpp
 /rules.ninja
-/unit-tests
-/unit-tests.dir/
-/unit-tests.vcxproj
-/unit-tests.vcxproj.filters
+/tests
+/tests.dir/
+/tests.vcxproj
+/tests.vcxproj.filters
 /windows-curl-*.tar.gz
 /x64/

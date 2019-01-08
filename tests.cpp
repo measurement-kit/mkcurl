@@ -20,9 +20,6 @@ struct MkCurlAbort : public std::exception {
 // MKCURL_ABORT overrides the default MKCURK_ABORT to throw MkCurlAbort.
 #define MKCURL_ABORT() throw MkCurlAbort()
 
-// By setting MKMOCK_HOOK_ENABLE and including mkmock.hpp we cause mkcurl.hpp
-// to compile with mocking enabled so that we can run unit tests.
-#define MKMOCK_HOOK_ENABLE
 #include "mkmock.hpp"
 
 MKMOCK_DEFINE_HOOK(curl_easy_init, CURL *);
@@ -64,7 +61,8 @@ MKMOCK_DEFINE_HOOK(curl_easy_getinfo_CURLINFO_HTTP_VERSION, CURLcode);
 // Include mkcurl implementation
 // -----------------------------
 
-#define MKCURL_INLINE_IMPL
+#define MKCURL_INLINE_IMPL  // inline the implementation
+#define MKCURL_MOCK         // enable mocking
 #include "mkcurl.hpp"
 
 // Unit tests
