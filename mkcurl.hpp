@@ -645,7 +645,6 @@ Response perform(const Request &req) noexcept {
     }
     res.http_version = HTTPVersionString(httpv);
   }
-  mkcurl_log(res.logs, "curl_easy_perform() success");
   return res;
 }
 
