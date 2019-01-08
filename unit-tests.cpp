@@ -64,7 +64,8 @@ MKMOCK_DEFINE_HOOK(curl_easy_getinfo_CURLINFO_HTTP_VERSION, CURLcode);
 // Include mkcurl implementation
 // -----------------------------
 
-#define MKCURL_INLINE_IMPL
+#define MKCURL_INLINE_IMPL  // inline the implementation
+#define MKCURL_MOCK         // enable mocking
 #include "mkcurl.hpp"
 
 // Unit tests
