@@ -1,3 +1,4 @@
+/.mkbuild
 /.ninja_deps
 /.ninja_log
 /ALL_BUILD.vcxproj
