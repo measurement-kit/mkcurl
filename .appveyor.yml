@@ -9,5 +9,5 @@ build_script:
   - cmd: go get -v github.com/bassosimone/mkbuild
   - cmd: "%GOPATH%/bin/mkbuild.exe autogen"
   - cmd: cmake -G "%CMAKE_GENERATOR%"
-  - cmd: cmake --build -C Release .
+  - cmd: cmake --build . -C Release
   - cmd: ctest --output-on-failure -C Release -a
