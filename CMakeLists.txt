@@ -245,6 +245,16 @@ link_libraries(${CMAKE_REQUIRED_LIBRARIES})
 enable_testing()
 
 #
+# integration-tests
+#
+
+add_executable(
+  integration-tests
+  integration-tests.cpp
+  mkcurl.cpp
+)
+
+#
 # mkcurl-client
 #
 
@@ -273,24 +283,6 @@ add_test(
 )
 
 #
-# test: tcp-fastopen
-#
-
-add_test(
-  NAME tcp-fastopen COMMAND
-  mkcurl-client --enable-tcp-fastopen https://www.kernel.org
-)
-
-#
-# test: external_ca
-#
-
-add_test(
-  NAME external_ca COMMAND
-  mkcurl-client --ca-bundle-path ./.mkbuild/etc/ca-bundle.pem https://www.kernel.org
-)
-
-#
 # test: http11_test
 #
 
@@ -309,12 +301,30 @@ add_test(
 )
 
 #
-# test: http2_test
+# test: connect_to
 #
 
 add_test(
-  NAME http2_test COMMAND
-  mkcurl-client --enable-http2 https://www.google.com
+  NAME connect_to COMMAND
+  mkcurl-client --connect-to www.google.com https://www.youtube.com
+)
+
+#
+# test: integration_tests
+#
+
+add_test(
+  NAME integration_tests COMMAND
+  integration-tests
+)
+
+#
+# test: external_ca
+#
+
+add_test(
+  NAME external_ca COMMAND
+  mkcurl-client --ca-bundle-path ./.mkbuild/etc/ca-bundle.pem https://www.kernel.org
 )
 
 #
@@ -342,13 +352,4 @@ add_test(
 add_test(
   NAME put COMMAND
   mkcurl-client --put --data "{\"net-tests\":[]}" https://httpbin.org/put
-)
-
-#
-# test: connect_to
-#
-
-add_test(
-  NAME connect_to COMMAND
-  mkcurl-client --connect-to www.google.com https://www.youtube.com
 )
