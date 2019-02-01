@@ -6,3 +6,14 @@ This header-only library contains Measurement Kit cURL wrappers. Its main
 use case is vendoring of a specific tag inside Measurement Kit. Because this
 is just a basic building block, we do not provide any stable API guarantee
 for this library. For this reason, we'll never release `v1.0.0`.
+
+To build and test:
+
+```
+go get -v github.com/bassosimone/mkbuild
+cmake .
+cmake --build .
+ctest -a
+```
+
+See `.travis.yml` and `.appveyor.yml` for more options.
