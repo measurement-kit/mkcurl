@@ -7,34 +7,40 @@ dependencies:
 - github.com/curl/curl
 - github.com/measurement-kit/mkmock
 
-build:
+targets:
+  libraries:
+    mkcurl:
+      compile: [mkcurl.cpp]
   executables:
     mkcurl-client:
-    - mkcurl-client.cpp
-    - mkcurl.cpp
+      compile: [mkcurl-client.cpp]
+      link: [mkcurl]
     tests:
-    - tests.cpp
+      compile: [tests.cpp]
     integration-tests:
-    - integration-tests.cpp
-    - mkcurl.cpp
+      compile: [integration-tests.cpp]
+      link: [mkcurl]
 
 tests:
   mocked_tests:
-  - tests
+    command: tests
   integration_tests:
-  - integration-tests
+    command: integration-tests
   external_ca:
-  - mkcurl-client --ca-bundle-path ./.mkbuild/etc/ca-bundle.pem
-    https://www.kernel.org
+    command: mkcurl-client --ca-bundle-path ./.mkbuild/data/cacert.pem
+      https://www.kernel.org
   http11_test:
-  - mkcurl-client https://ooni.torproject.org
+    command: mkcurl-client https://ooni.torproject.org
   using_timeout:
-  - mkcurl-client --timeout 10 --follow-redirect https://www.facebook.com
+    command: mkcurl-client --timeout 10 --follow-redirect
+      https://www.facebook.com
   redirect_test:
-  - mkcurl-client --follow-redirect http://google.com
+    command: mkcurl-client --follow-redirect http://google.com
   post:
-  - mkcurl-client --post --data "{\"net-tests\":[]}" https://httpbin.org/post
+    command: mkcurl-client --post --data "{\"net-tests\":[]}"
+      https://httpbin.org/post
   put:
-  - mkcurl-client --put --data "{\"net-tests\":[]}" https://httpbin.org/put
+    command: mkcurl-client --put --data "{\"net-tests\":[]}"
+      https://httpbin.org/put
   connect_to:
-  - mkcurl-client --connect-to www.google.com https://www.youtube.com
+    command: mkcurl-client --connect-to www.google.com https://www.youtube.com
