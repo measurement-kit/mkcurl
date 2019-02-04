@@ -115,8 +115,8 @@ Response perform(const Request &request) noexcept;
 #include <assert.h>
 
 #include <algorithm>
-#include <memory>
 #include <chrono>
+#include <memory>
 #include <sstream>
 
 #include <curl/curl.h>
@@ -204,10 +204,10 @@ static size_t mkcurl_body_cb_(
 }
 
 static int mkcurl_debug_cb_(CURL *handle,
-                           curl_infotype type,
-                           char *data,
-                           size_t size,
-                           void *userptr) {
+                            curl_infotype type,
+                            char *data,
+                            size_t size,
+                            void *userptr) {
   (void)handle;
   if (data == nullptr || userptr == nullptr) {
     MKCURL_ABORT();
@@ -232,26 +232,22 @@ static int mkcurl_debug_cb_(CURL *handle,
     case CURLINFO_TEXT:
       log_many_lines("", std::string{(const char *)data, size});
       break;
-    case CURLINFO_HEADER_IN:
-      {
-        std::string s{(const char *)data, size};
-        log_many_lines("<", s);
-        res->response_headers += s;
-      }
-      break;
+    case CURLINFO_HEADER_IN: {
+      std::string s{(const char *)data, size};
+      log_many_lines("<", s);
+      res->response_headers += s;
+    } break;
     case CURLINFO_DATA_IN:
       log_many_lines("<data:", std::to_string(size));
       break;
     case CURLINFO_SSL_DATA_IN:
       log_many_lines("<tls_data:", std::to_string(size));
       break;
-    case CURLINFO_HEADER_OUT:
-      {
-        std::string s{(const char *)data, size};
-        log_many_lines(">", s);
-        res->request_headers += s;
-      }
-      break;
+    case CURLINFO_HEADER_OUT: {
+      std::string s{(const char *)data, size};
+      log_many_lines(">", s);
+      res->request_headers += s;
+    } break;
     case CURLINFO_DATA_OUT:
       log_many_lines(">data:", std::to_string(size));
       break;
