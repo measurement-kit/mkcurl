@@ -182,7 +182,7 @@ struct mkcurl_slist {
 
 extern "C" {
 
-static size_t mkcurl_body_cb(
+static size_t mkcurl_body_cb_(
     char *ptr, size_t size, size_t nmemb, void *userdata) {
   if (nmemb <= 0) {
     return 0;  // This means "no body"
@@ -203,7 +203,7 @@ static size_t mkcurl_body_cb(
   return nmemb;
 }
 
-static int mkcurl_debug_cb(CURL *handle,
+static int mkcurl_debug_cb_(CURL *handle,
                            curl_infotype type,
                            char *data,
                            size_t size,
@@ -478,7 +478,7 @@ Response perform(const Request &req) noexcept {
   }
   {
     res.error = curl_easy_setopt(handle.get(), CURLOPT_WRITEFUNCTION,
-                                 mkcurl_body_cb);
+                                 mkcurl_body_cb_);
     MKCURL_HOOK(curl_easy_setopt_CURLOPT_WRITEFUNCTION, res.error);
     if (res.error != CURLE_OK) {
       mkcurl_log(res.logs, "curl_easy_setopt(CURLOPT_WRITEFUNCTION) failed");
@@ -525,7 +525,7 @@ Response perform(const Request &req) noexcept {
   }
   {
     res.error = curl_easy_setopt(handle.get(), CURLOPT_DEBUGFUNCTION,
-                                 mkcurl_debug_cb);
+                                 mkcurl_debug_cb_);
     MKCURL_HOOK(curl_easy_setopt_CURLOPT_DEBUGFUNCTION, res.error);
     if (res.error != CURLE_OK) {
       mkcurl_log(res.logs, "curl_easy_setopt(CURLOPT_DEBUGFUNCTION) failed");
