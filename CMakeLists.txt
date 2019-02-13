@@ -46,9 +46,9 @@ endif()
 message(STATUS "mkdirAll: ${CMAKE_BINARY_DIR}/.mkbuild/data")
 execute_process(COMMAND
   ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/.mkbuild/data"
-  RESULT_VARIABLE FAILURE)
-if("${FAILURE}")
-  message(FATAL_ERROR "${FAILURE}")
+  RESULT_VARIABLE FAILURE_1153)
+if("${FAILURE_1153}")
+  message(FATAL_ERROR "${FAILURE_1153}")
 endif()
 message(STATUS "download: https://curl.haxx.se/ca/cacert.pem")
 file(DOWNLOAD https://curl.haxx.se/ca/cacert.pem
@@ -63,9 +63,9 @@ file(DOWNLOAD https://curl.haxx.se/ca/cacert.pem
 message(STATUS "mkdirAll: ${CMAKE_BINARY_DIR}/.mkbuild/include")
 execute_process(COMMAND
   ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/.mkbuild/include"
-  RESULT_VARIABLE FAILURE)
-if("${FAILURE}")
-  message(FATAL_ERROR "${FAILURE}")
+  RESULT_VARIABLE FAILURE_1702)
+if("${FAILURE_1702}")
+  message(FATAL_ERROR "${FAILURE_1702}")
 endif()
 message(STATUS "download: https://raw.githubusercontent.com/adishavit/argh/v1.3.0/argh.h")
 file(DOWNLOAD https://raw.githubusercontent.com/adishavit/argh/v1.3.0/argh.h
@@ -73,8 +73,8 @@ file(DOWNLOAD https://raw.githubusercontent.com/adishavit/argh/v1.3.0/argh.h
   EXPECTED_HASH SHA256=ddb7dfc18dcf90149735b76fb2cff101067453a1df1943a6911233cb7085980c
   TLS_VERIFY ON)
 LIST(APPEND CMAKE_REQUIRED_INCLUDES "${CMAKE_BINARY_DIR}/.mkbuild/include")
-CHECK_INCLUDE_FILE_CXX("argh.h" MK_HAVE_HEADER)
-if(NOT ("${MK_HAVE_HEADER}"))
+CHECK_INCLUDE_FILE_CXX("argh.h" MK_HAVE_HEADER_2202)
+if(NOT ("${MK_HAVE_HEADER_2202}"))
   message(FATAL_ERROR "cannot find: argh.h")
 endif()
 
@@ -85,9 +85,9 @@ endif()
 message(STATUS "mkdirAll: ${CMAKE_BINARY_DIR}/.mkbuild/include")
 execute_process(COMMAND
   ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/.mkbuild/include"
-  RESULT_VARIABLE FAILURE)
-if("${FAILURE}")
-  message(FATAL_ERROR "${FAILURE}")
+  RESULT_VARIABLE FAILURE_2526)
+if("${FAILURE_2526}")
+  message(FATAL_ERROR "${FAILURE_2526}")
 endif()
 message(STATUS "download: https://github.com/catchorg/Catch2/releases/download/v2.3.0/catch.hpp")
 file(DOWNLOAD https://github.com/catchorg/Catch2/releases/download/v2.3.0/catch.hpp
@@ -95,8 +95,8 @@ file(DOWNLOAD https://github.com/catchorg/Catch2/releases/download/v2.3.0/catch.
   EXPECTED_HASH SHA256=5eb8532fd5ec0d28433eba8a749102fd1f98078c5ebf35ad607fb2455a000004
   TLS_VERIFY ON)
 LIST(APPEND CMAKE_REQUIRED_INCLUDES "${CMAKE_BINARY_DIR}/.mkbuild/include")
-CHECK_INCLUDE_FILE_CXX("catch.hpp" MK_HAVE_HEADER)
-if(NOT ("${MK_HAVE_HEADER}"))
+CHECK_INCLUDE_FILE_CXX("catch.hpp" MK_HAVE_HEADER_3043)
+if(NOT ("${MK_HAVE_HEADER_3043}"))
   message(FATAL_ERROR "cannot find: catch.hpp")
 endif()
 
@@ -109,9 +109,9 @@ if(("${WIN32}"))
   message(STATUS "mkdirAll: ${CMAKE_BINARY_DIR}/.mkbuild/download")
   execute_process(COMMAND
     ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/.mkbuild/download"
-    RESULT_VARIABLE FAILURE)
-  if("${FAILURE}")
-    message(FATAL_ERROR "${FAILURE}")
+    RESULT_VARIABLE FAILURE_3424)
+  if("${FAILURE_3424}")
+    message(FATAL_ERROR "${FAILURE_3424}")
   endif()
   message(STATUS "download: https://github.com/measurement-kit/prebuilt/releases/download//testing/windows-curl-7.61.1-1.tar.gz")
   file(DOWNLOAD https://github.com/measurement-kit/prebuilt/releases/download//testing/windows-curl-7.61.1-1.tar.gz
@@ -122,28 +122,28 @@ if(("${WIN32}"))
   execute_process(COMMAND
     ${CMAKE_COMMAND} -E tar xf "${CMAKE_BINARY_DIR}/.mkbuild/download/windows-curl-7.61.1-1.tar.gz"
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/.mkbuild/download"
-    RESULT_VARIABLE FAILURE)
-  if("${FAILURE}")
-    message(FATAL_ERROR "${FAILURE}")
+    RESULT_VARIABLE FAILURE_4247)
+  if("${FAILURE_4247}")
+    message(FATAL_ERROR "${FAILURE_4247}")
   endif()
   LIST(APPEND CMAKE_REQUIRED_INCLUDES "${CMAKE_BINARY_DIR}/.mkbuild/download/MK_DIST/windows/curl/7.61.1-1/${MK_WIN32_ARCH}/include")
-  CHECK_INCLUDE_FILE_CXX("curl/curl.h" MK_HAVE_HEADER)
-  if(NOT ("${MK_HAVE_HEADER}"))
+  CHECK_INCLUDE_FILE_CXX("curl/curl.h" MK_HAVE_HEADER_4492)
+  if(NOT ("${MK_HAVE_HEADER_4492}"))
     message(FATAL_ERROR "cannot find: curl/curl.h")
   endif()
-  CHECK_LIBRARY_EXISTS("${CMAKE_BINARY_DIR}/.mkbuild/download/MK_DIST/windows/curl/7.61.1-1/${MK_WIN32_ARCH}/lib/libcurl.lib" "curl_easy_init" "" MK_HAVE_LIB)
-  if(NOT ("${MK_HAVE_LIB}"))
+  CHECK_LIBRARY_EXISTS("${CMAKE_BINARY_DIR}/.mkbuild/download/MK_DIST/windows/curl/7.61.1-1/${MK_WIN32_ARCH}/lib/libcurl.lib" "curl_easy_init" "" MK_HAVE_LIB_4651)
+  if(NOT ("${MK_HAVE_LIB_4651}"))
     message(FATAL_ERROR "cannot find: ${CMAKE_BINARY_DIR}/.mkbuild/download/MK_DIST/windows/curl/7.61.1-1/${MK_WIN32_ARCH}/lib/libcurl.lib")
   endif()
   LIST(APPEND CMAKE_REQUIRED_LIBRARIES "${CMAKE_BINARY_DIR}/.mkbuild/download/MK_DIST/windows/curl/7.61.1-1/${MK_WIN32_ARCH}/lib/libcurl.lib")
   LIST(APPEND CMAKE_REQUIRED_DEFINITIONS -DCURL_STATICLIB)
 else()
-  CHECK_INCLUDE_FILE_CXX("curl/curl.h" MK_HAVE_HEADER)
-  if(NOT ("${MK_HAVE_HEADER}"))
+  CHECK_INCLUDE_FILE_CXX("curl/curl.h" MK_HAVE_HEADER_5209)
+  if(NOT ("${MK_HAVE_HEADER_5209}"))
     message(FATAL_ERROR "cannot find: curl/curl.h")
   endif()
-  CHECK_LIBRARY_EXISTS("curl" "curl_easy_init" "" MK_HAVE_LIB)
-  if(NOT ("${MK_HAVE_LIB}"))
+  CHECK_LIBRARY_EXISTS("curl" "curl_easy_init" "" MK_HAVE_LIB_5368)
+  if(NOT ("${MK_HAVE_LIB_5368}"))
     message(FATAL_ERROR "cannot find: curl")
   endif()
   LIST(APPEND CMAKE_REQUIRED_LIBRARIES "curl")
@@ -156,9 +156,9 @@ endif()
 message(STATUS "mkdirAll: ${CMAKE_BINARY_DIR}/.mkbuild/include")
 execute_process(COMMAND
   ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/.mkbuild/include"
-  RESULT_VARIABLE FAILURE)
-if("${FAILURE}")
-  message(FATAL_ERROR "${FAILURE}")
+  RESULT_VARIABLE FAILURE_5764)
+if("${FAILURE_5764}")
+  message(FATAL_ERROR "${FAILURE_5764}")
 endif()
 message(STATUS "download: https://raw.githubusercontent.com/measurement-kit/mkmock/v0.2.0/mkmock.hpp")
 file(DOWNLOAD https://raw.githubusercontent.com/measurement-kit/mkmock/v0.2.0/mkmock.hpp
@@ -166,8 +166,8 @@ file(DOWNLOAD https://raw.githubusercontent.com/measurement-kit/mkmock/v0.2.0/mk
   EXPECTED_HASH SHA256=f07bc063a2e64484482f986501003e45ead653ea3f53fadbdb45c17a51d916d2
   TLS_VERIFY ON)
 LIST(APPEND CMAKE_REQUIRED_INCLUDES "${CMAKE_BINARY_DIR}/.mkbuild/include")
-CHECK_INCLUDE_FILE_CXX("mkmock.hpp" MK_HAVE_HEADER)
-if(NOT ("${MK_HAVE_HEADER}"))
+CHECK_INCLUDE_FILE_CXX("mkmock.hpp" MK_HAVE_HEADER_6292)
+if(NOT ("${MK_HAVE_HEADER_6292}"))
   message(FATAL_ERROR "cannot find: mkmock.hpp")
 endif()
 
@@ -252,6 +252,20 @@ target_link_libraries(
 )
 
 #
+# integration-tests
+#
+
+add_executable(
+  integration-tests
+  integration-tests.cpp
+)
+target_link_libraries(
+  integration-tests
+  mkcurl
+  ${CMAKE_REQUIRED_LIBRARIES}
+)
+
+#
 # mkcurl-client
 #
 
@@ -279,17 +293,11 @@ target_link_libraries(
 )
 
 #
-# integration-tests
+# test: connect_to
 #
 
-add_executable(
-  integration-tests
-  integration-tests.cpp
-)
-target_link_libraries(
-  integration-tests
-  mkcurl
-  ${CMAKE_REQUIRED_LIBRARIES}
+add_test(
+  NAME connect_to COMMAND mkcurl-client --connect-to www.google.com https://www.youtube.com
 )
 
 #
@@ -309,27 +317,11 @@ add_test(
 )
 
 #
-# test: using_timeout
+# test: integration_tests
 #
 
 add_test(
-  NAME using_timeout COMMAND mkcurl-client --timeout 10 --follow-redirect https://www.facebook.com
-)
-
-#
-# test: redirect_test
-#
-
-add_test(
-  NAME redirect_test COMMAND mkcurl-client --follow-redirect http://google.com
-)
-
-#
-# test: put
-#
-
-add_test(
-  NAME put COMMAND mkcurl-client --put --data "{\"net-tests\":[]}" https://httpbin.org/put
+  NAME integration_tests COMMAND integration-tests
 )
 
 #
@@ -349,17 +341,25 @@ add_test(
 )
 
 #
-# test: connect_to
+# test: put
 #
 
 add_test(
-  NAME connect_to COMMAND mkcurl-client --connect-to www.google.com https://www.youtube.com
+  NAME put COMMAND mkcurl-client --put --data "{\"net-tests\":[]}" https://httpbin.org/put
 )
 
 #
-# test: integration_tests
+# test: redirect_test
 #
 
 add_test(
-  NAME integration_tests COMMAND integration-tests
+  NAME redirect_test COMMAND mkcurl-client --follow-redirect http://google.com
+)
+
+#
+# test: using_timeout
+#
+
+add_test(
+  NAME using_timeout COMMAND mkcurl-client --timeout 10 --follow-redirect https://www.facebook.com
 )

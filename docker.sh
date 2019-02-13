@@ -3,12 +3,16 @@
 
 USAGE="Usage: $0 asan|clang|coverage|tsan|ubsan|vanilla"
 
-if [ $# -ne 1 ]; then
+if [ $# -eq 1 ]; then
+  INTERNAL=0
+  BUILD_TYPE="$1"
+elif [ $# -eq 2 -a "$1" = "-internal" ]; then
+  INTERNAL=1
+  BUILD_TYPE="$2"
+else
   echo "$USAGE" 1>&2
   exit 1
 fi
-BUILD_TYPE="$1"
-shift
 
 if [ "$CODECOV_TOKEN" = "" ]; then
   echo "WARNING: CODECOV_TOKEN is not set" 1>&2
@@ -16,9 +20,19 @@ fi
 if [ "$TRAVIS_BRANCH" = "" ]; then
   echo "WARNING: TRAVIS_BRANCH is not set" 1>&2
 fi
+
 set -x
 
-cd /mk
+if [ $INTERNAL -eq 0 ]; then
+  exec docker run --cap-add=NET_ADMIN \
+                  -e CODECOV_TOKEN=$CODECOV_TOKEN \
+                  -e TRAVIS_BRANCH=$TRAVIS_BRANCH \
+                  -v "$(pwd):/mk" \
+                  --workdir /mk \
+                  -t bassosimone/mk-debian \
+                  ./docker.sh -internal "$1"
+fi
+
 env | grep -v TOKEN | sort
 
 # Make sure we don't consume too much resources by bumping latency
@@ -58,7 +72,9 @@ else
 fi
 
 # Configure, make, and make check equivalent
-cmake -GNinja -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE .
+mkdir build
+cd build
+cmake -GNinja -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE ..
 cmake --build . -- -v
 ctest --output-on-failure -a -j8
 
