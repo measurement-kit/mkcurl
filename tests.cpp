@@ -68,38 +68,38 @@ MKMOCK_DEFINE_HOOK(curl_easy_getinfo_CURLINFO_HTTP_VERSION, CURLcode);
 // Unit tests
 // ----------
 
-TEST_CASE("When mkcurl_body_cb is passed zero nmemb") {
-  REQUIRE(mkcurl_body_cb(nullptr, 17, 0, nullptr) == 0);
+TEST_CASE("When mkcurl_body_cb_ is passed zero nmemb") {
+  REQUIRE(mkcurl_body_cb_(nullptr, 17, 0, nullptr) == 0);
 }
 
-TEST_CASE("When mkcurl_body_cb would overflow a size_t") {
-  REQUIRE(mkcurl_body_cb(nullptr, SIZE_MAX / 2, 4, nullptr) == 0);
+TEST_CASE("When mkcurl_body_cb_ would overflow a size_t") {
+  REQUIRE(mkcurl_body_cb_(nullptr, SIZE_MAX / 2, 4, nullptr) == 0);
 }
 
-TEST_CASE("When mkcurl_body_cb is passed a NULL ptr") {
-  REQUIRE_THROWS(mkcurl_body_cb(nullptr, 17, 4, (void *)0x123456));
+TEST_CASE("When mkcurl_body_cb_ is passed a NULL ptr") {
+  REQUIRE_THROWS(mkcurl_body_cb_(nullptr, 17, 4, (void *)0x123456));
 }
 
-TEST_CASE("When mkcurl_body_cb is passed a NULL userdata") {
-  REQUIRE_THROWS(mkcurl_body_cb((char *)0x123456, 17, 4, nullptr));
+TEST_CASE("When mkcurl_body_cb_ is passed a NULL userdata") {
+  REQUIRE_THROWS(mkcurl_body_cb_((char *)0x123456, 17, 4, nullptr));
 }
 
-TEST_CASE("When mkcurl_debug_cb is passed a NULL data") {
-  REQUIRE_THROWS(mkcurl_debug_cb(nullptr, CURLINFO_TEXT, nullptr, 0,
+TEST_CASE("When mkcurl_debug_cb_ is passed a NULL data") {
+  REQUIRE_THROWS(mkcurl_debug_cb_(nullptr, CURLINFO_TEXT, nullptr, 0,
                                  (void *)0x123456));
 }
 
-TEST_CASE("When mkcurl_debug_cb is passed a NULL userptr") {
-  REQUIRE_THROWS(mkcurl_debug_cb(nullptr, CURLINFO_TEXT, (char *)0x123456,
+TEST_CASE("When mkcurl_debug_cb_ is passed a NULL userptr") {
+  REQUIRE_THROWS(mkcurl_debug_cb_(nullptr, CURLINFO_TEXT, (char *)0x123456,
                                  0, nullptr));
 }
 
-TEST_CASE("When mkcurl_debug_cb is passed a unexpected curl_infotype") {
+TEST_CASE("When mkcurl_debug_cb_ is passed a unexpected curl_infotype") {
   // Implementation note: here the return value doesn't matter much; what
   // really matters is that the code does not misbehave.
   mk::curl::Response resp;
   std::string data;
-  REQUIRE(mkcurl_debug_cb(nullptr, CURLINFO_END, (char *)data.c_str(),
+  REQUIRE(mkcurl_debug_cb_(nullptr, CURLINFO_END, (char *)data.c_str(),
                           data.size(), &resp) == 0);
 }
 
