@@ -1,0 +1,48 @@
+name: mkcurl
+
+docker: bassosimone/mk-debian
+
+dependencies:
+- curl.haxx.se/ca
+- github.com/adishavit/argh
+- github.com/catchorg/catch2
+- github.com/curl/curl
+- github.com/measurement-kit/mkmock
+
+targets:
+  libraries:
+    mkcurl:
+      compile: [mkcurl.cpp]
+  executables:
+    mkcurl-client:
+      compile: [mkcurl-client.cpp]
+      link: [mkcurl]
+    tests:
+      compile: [tests.cpp]
+    integration-tests:
+      compile: [integration-tests.cpp]
+      link: [mkcurl]
+
+tests:
+  mocked_tests:
+    command: tests
+  integration_tests:
+    command: integration-tests
+  external_ca:
+    command: mkcurl-client --ca-bundle-path ./.mkbuild/data/cacert.pem
+      https://www.kernel.org
+  http11_test:
+    command: mkcurl-client https://ooni.torproject.org
+  using_timeout:
+    command: mkcurl-client --timeout 10 --follow-redirect
+      https://www.facebook.com
+  redirect_test:
+    command: mkcurl-client --follow-redirect http://google.com
+  post:
+    command: mkcurl-client --post --data "{\"net-tests\":[]}"
+      https://httpbin.org/post
+  put:
+    command: mkcurl-client --put --data "{\"net-tests\":[]}"
+      https://httpbin.org/put
+  connect_to:
+    command: mkcurl-client --connect-to www.google.com https://www.youtube.com

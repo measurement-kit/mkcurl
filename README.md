@@ -6,3 +6,28 @@ This header-only library contains Measurement Kit cURL wrappers. Its main
 use case is vendoring of a specific tag inside Measurement Kit. Because this
 is just a basic building block, we do not provide any stable API guarantee
 for this library. For this reason, we'll never release `v1.0.0`.
+
+## Regenerating build files
+
+Possibly edit `MKBuild.yaml`, then run:
+
+```
+go get -v github.com/measurement-kit/mkbuild
+mkbuild
+```
+
+## Building
+
+```
+mkdir build
+cd build
+cmake -GNinja ..
+cmake --build .
+ctest -a -j8 --output-on-failure
+```
+
+## Testing with docker
+
+```
+./docker.sh <build-type>
+```
