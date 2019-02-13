@@ -1,6 +1,4 @@
-language: go
-go:
-  - 1.11
+language: c++
 services:
   - docker
 sudo: required
@@ -12,5 +10,4 @@ matrix:
     - env: BUILD_TYPE="ubsan"
     - env: BUILD_TYPE="vanilla"
 script:
-  - go get -v github.com/bassosimone/mkbuild
-  - $GOPATH/bin/mkbuild docker $BUILD_TYPE
+  - ./docker.sh $BUILD_TYPE
