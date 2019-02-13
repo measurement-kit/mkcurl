@@ -7,13 +7,27 @@ use case is vendoring of a specific tag inside Measurement Kit. Because this
 is just a basic building block, we do not provide any stable API guarantee
 for this library. For this reason, we'll never release `v1.0.0`.
 
-To build and test:
+## Regenerating build files
+
+Possibly edit `MKBuild.yaml`, then run:
 
 ```
-go get -v github.com/bassosimone/mkbuild
-cmake .
+go get -v github.com/measurement-kit/mkbuild
+mkbuild
+```
+
+## Building
+
+```
+mkdir build
+cd build
+cmake -GNinja ..
 cmake --build .
-ctest -a
+ctest -a -j8 --output-on-failure
 ```
 
-See `.travis.yml` and `.appveyor.yml` for more options.
+## Testing with docker
+
+```
+./docker.sh <build-type>
+```
