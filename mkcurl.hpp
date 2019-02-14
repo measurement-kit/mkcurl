@@ -340,15 +340,17 @@ static const char *HTTPVersionString(long httpv) noexcept {
 static CURLcode perform_and_retry(
     CURL *handlep, size_t retries, std::vector<Log> &logs) noexcept {
   CURLcode rv{};
-  do {
-    std::stringstream ss;
-    ss << "Performing request (" << retries << " retries left)";
-    mkcurl_log(logs, ss.str());
+  bool retriable{};
+  for (;;) {
     rv = curl_easy_perform(handlep);
     MKCURL_HOOK(curl_easy_perform, rv);
-  } while (retries-- > 0 &&
-           (rv == CURLE_COULDNT_CONNECT ||
-            rv == CURLE_COULDNT_RESOLVE_HOST));
+    retriable = retries-- > 0 && (rv == CURLE_COULDNT_CONNECT ||
+                                  rv == CURLE_COULDNT_RESOLVE_HOST);
+    if (!retriable) {
+      break;
+    }
+    mkcurl_log(logs, "Transient failure; let's try one more time");
+  }
   return rv;
 }
 

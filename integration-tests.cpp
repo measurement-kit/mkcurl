@@ -72,14 +72,20 @@ TEST_CASE("HTTP2 works") {
 }
 
 TEST_CASE("We retry a request") {
-  bool tolerate_failure = true;
   mk::curl::Request req;
   SECTION("when the DNS is failing") {
     req.url = "https://fjjkgjghjlaljjg.gjkgkgk";
-    run(mk::curl::perform(req), tolerate_failure);
+    auto resp = mk::curl::perform(req);
+    REQUIRE(resp.error == CURLE_COULDNT_RESOLVE_HOST);
   }
   SECTION("when we cannot connect") {
     req.url = "http://ooni.torproject.org:54321";
-    run(mk::curl::perform(req), tolerate_failure);
+    auto resp = mk::curl::perform(req);
+    REQUIRE(resp.error == CURLE_COULDNT_CONNECT);
+  }
+  SECTION("when the failure is more serious") {
+    req.url = "https://ooni.torproject.org:80";  // note: HTTP not HTTPS
+    auto resp = mk::curl::perform(req);
+    REQUIRE(resp.error != CURLE_OK);
   }
 }
