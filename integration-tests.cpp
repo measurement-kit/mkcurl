@@ -70,3 +70,16 @@ TEST_CASE("HTTP2 works") {
   req.url = "https://www.google.org";
   run(mk::curl::perform(req), tolerate_failure);
 }
+
+TEST_CASE("We retry a request") {
+  bool tolerate_failure = true;
+  mk::curl::Request req;
+  SECTION("when the DNS is failing") {
+    req.url = "https://fjjkgjghjlaljjg.gjkgkgk";
+    run(mk::curl::perform(req), tolerate_failure);
+  }
+  SECTION("when we cannot connect") {
+    req.url = "http://ooni.torproject.org:54321";
+    run(mk::curl::perform(req), tolerate_failure);
+  }
+}
