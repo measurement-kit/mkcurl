@@ -70,3 +70,22 @@ TEST_CASE("HTTP2 works") {
   req.url = "https://www.google.org";
   run(mk::curl::perform(req), tolerate_failure);
 }
+
+TEST_CASE("We retry a request") {
+  mk::curl::Request req;
+  SECTION("when the DNS is failing") {
+    req.url = "https://fjjkgjghjlaljjg.gjkgkgk";
+    auto resp = mk::curl::perform(req);
+    REQUIRE(resp.error == CURLE_COULDNT_RESOLVE_HOST);
+  }
+  SECTION("when we cannot connect") {
+    req.url = "http://ooni.torproject.org:54321";
+    auto resp = mk::curl::perform(req);
+    REQUIRE(resp.error == CURLE_COULDNT_CONNECT);
+  }
+  SECTION("when the failure is more serious") {
+    req.url = "https://ooni.torproject.org:80";  // note: HTTP not HTTPS
+    auto resp = mk::curl::perform(req);
+    REQUIRE(resp.error != CURLE_OK);
+  }
+}
