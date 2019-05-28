@@ -22,9 +22,6 @@ list(APPEND CMAKE_REQUIRED_LIBRARIES Threads::Threads)
 
 if(("${WIN32}"))
   list(APPEND CMAKE_REQUIRED_LIBRARIES ws2_32 crypt32)
-  if(("${MINGW}"))
-    list(APPEND CMAKE_REQUIRED_LIBRARIES -static-libgcc -static-libstdc++)
-  endif()
 endif()
 
 enable_testing()
@@ -38,23 +35,11 @@ if(("${WIN32}"))
     message(FATAL_ERROR "Neither 32 not 64 bit")
   endif()
 endif()
-
-#
-# cacert.pem
-#
-
-message(STATUS "mkdirAll: ${CMAKE_BINARY_DIR}/.mkbuild/data")
-execute_process(COMMAND
-  ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/.mkbuild/data"
-  RESULT_VARIABLE FAILURE_1153)
-if("${FAILURE_1153}")
-  message(FATAL_ERROR "${FAILURE_1153}")
+if((${APPLE}))
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/usr/local/include")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/usr/local/lib")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -L/usr/local/lib")
 endif()
-message(STATUS "download: https://curl.haxx.se/ca/cacert.pem")
-file(DOWNLOAD https://curl.haxx.se/ca/cacert.pem
-  "${CMAKE_BINARY_DIR}/.mkbuild/data/cacert.pem"
-  EXPECTED_HASH SHA256=c1fd9b235896b1094ee97bfb7e042f93530b5e300781f59b45edf84ee8c75000
-  TLS_VERIFY ON)
 
 #
 # argh.h
@@ -63,18 +48,18 @@ file(DOWNLOAD https://curl.haxx.se/ca/cacert.pem
 message(STATUS "mkdirAll: ${CMAKE_BINARY_DIR}/.mkbuild/include")
 execute_process(COMMAND
   ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/.mkbuild/include"
-  RESULT_VARIABLE FAILURE_1702)
-if("${FAILURE_1702}")
-  message(FATAL_ERROR "${FAILURE_1702}")
+  RESULT_VARIABLE FAILURE_1295)
+if("${FAILURE_1295}")
+  message(FATAL_ERROR "${FAILURE_1295}")
 endif()
-message(STATUS "download: https://raw.githubusercontent.com/adishavit/argh/v1.3.0/argh.h")
-file(DOWNLOAD https://raw.githubusercontent.com/adishavit/argh/v1.3.0/argh.h
+message(STATUS "download: https://raw.githubusercontent.com/adishavit/argh/v1.3.1/argh.h")
+file(DOWNLOAD https://raw.githubusercontent.com/adishavit/argh/v1.3.1/argh.h
   "${CMAKE_BINARY_DIR}/.mkbuild/include/argh.h"
   EXPECTED_HASH SHA256=ddb7dfc18dcf90149735b76fb2cff101067453a1df1943a6911233cb7085980c
   TLS_VERIFY ON)
 LIST(APPEND CMAKE_REQUIRED_INCLUDES "${CMAKE_BINARY_DIR}/.mkbuild/include")
-CHECK_INCLUDE_FILE_CXX("argh.h" MK_HAVE_HEADER_2202)
-if(NOT ("${MK_HAVE_HEADER_2202}"))
+CHECK_INCLUDE_FILE_CXX("argh.h" MK_HAVE_HEADER_1795)
+if(NOT ("${MK_HAVE_HEADER_1795}"))
   message(FATAL_ERROR "cannot find: argh.h")
 endif()
 
@@ -85,18 +70,18 @@ endif()
 message(STATUS "mkdirAll: ${CMAKE_BINARY_DIR}/.mkbuild/include")
 execute_process(COMMAND
   ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/.mkbuild/include"
-  RESULT_VARIABLE FAILURE_2526)
-if("${FAILURE_2526}")
-  message(FATAL_ERROR "${FAILURE_2526}")
+  RESULT_VARIABLE FAILURE_2119)
+if("${FAILURE_2119}")
+  message(FATAL_ERROR "${FAILURE_2119}")
 endif()
-message(STATUS "download: https://github.com/catchorg/Catch2/releases/download/v2.3.0/catch.hpp")
-file(DOWNLOAD https://github.com/catchorg/Catch2/releases/download/v2.3.0/catch.hpp
+message(STATUS "download: https://github.com/catchorg/Catch2/releases/download/v2.8.0/catch.hpp")
+file(DOWNLOAD https://github.com/catchorg/Catch2/releases/download/v2.8.0/catch.hpp
   "${CMAKE_BINARY_DIR}/.mkbuild/include/catch.hpp"
-  EXPECTED_HASH SHA256=5eb8532fd5ec0d28433eba8a749102fd1f98078c5ebf35ad607fb2455a000004
+  EXPECTED_HASH SHA256=2791047e459b981a1035f4ee16a2ad031f5bfb4ba66487ad4d3fc816c8946f61
   TLS_VERIFY ON)
 LIST(APPEND CMAKE_REQUIRED_INCLUDES "${CMAKE_BINARY_DIR}/.mkbuild/include")
-CHECK_INCLUDE_FILE_CXX("catch.hpp" MK_HAVE_HEADER_3043)
-if(NOT ("${MK_HAVE_HEADER_3043}"))
+CHECK_INCLUDE_FILE_CXX("catch.hpp" MK_HAVE_HEADER_2636)
+if(NOT ("${MK_HAVE_HEADER_2636}"))
   message(FATAL_ERROR "cannot find: catch.hpp")
 endif()
 
@@ -109,9 +94,9 @@ if(("${WIN32}"))
   message(STATUS "mkdirAll: ${CMAKE_BINARY_DIR}/.mkbuild/download")
   execute_process(COMMAND
     ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/.mkbuild/download"
-    RESULT_VARIABLE FAILURE_3424)
-  if("${FAILURE_3424}")
-    message(FATAL_ERROR "${FAILURE_3424}")
+    RESULT_VARIABLE FAILURE_3017)
+  if("${FAILURE_3017}")
+    message(FATAL_ERROR "${FAILURE_3017}")
   endif()
   message(STATUS "download: https://github.com/measurement-kit/prebuilt/releases/download//testing/windows-curl-7.61.1-1.tar.gz")
   file(DOWNLOAD https://github.com/measurement-kit/prebuilt/releases/download//testing/windows-curl-7.61.1-1.tar.gz
@@ -122,31 +107,56 @@ if(("${WIN32}"))
   execute_process(COMMAND
     ${CMAKE_COMMAND} -E tar xf "${CMAKE_BINARY_DIR}/.mkbuild/download/windows-curl-7.61.1-1.tar.gz"
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/.mkbuild/download"
-    RESULT_VARIABLE FAILURE_4247)
-  if("${FAILURE_4247}")
-    message(FATAL_ERROR "${FAILURE_4247}")
+    RESULT_VARIABLE FAILURE_3840)
+  if("${FAILURE_3840}")
+    message(FATAL_ERROR "${FAILURE_3840}")
   endif()
   LIST(APPEND CMAKE_REQUIRED_INCLUDES "${CMAKE_BINARY_DIR}/.mkbuild/download/MK_DIST/windows/curl/7.61.1-1/${MK_WIN32_ARCH}/include")
-  CHECK_INCLUDE_FILE_CXX("curl/curl.h" MK_HAVE_HEADER_4492)
-  if(NOT ("${MK_HAVE_HEADER_4492}"))
+  CHECK_INCLUDE_FILE_CXX("curl/curl.h" MK_HAVE_HEADER_4085)
+  if(NOT ("${MK_HAVE_HEADER_4085}"))
     message(FATAL_ERROR "cannot find: curl/curl.h")
   endif()
-  CHECK_LIBRARY_EXISTS("${CMAKE_BINARY_DIR}/.mkbuild/download/MK_DIST/windows/curl/7.61.1-1/${MK_WIN32_ARCH}/lib/libcurl.lib" "curl_easy_init" "" MK_HAVE_LIB_4651)
-  if(NOT ("${MK_HAVE_LIB_4651}"))
+  CHECK_LIBRARY_EXISTS("${CMAKE_BINARY_DIR}/.mkbuild/download/MK_DIST/windows/curl/7.61.1-1/${MK_WIN32_ARCH}/lib/libcurl.lib" "curl_easy_init" "" MK_HAVE_LIB_4244)
+  if(NOT ("${MK_HAVE_LIB_4244}"))
     message(FATAL_ERROR "cannot find: ${CMAKE_BINARY_DIR}/.mkbuild/download/MK_DIST/windows/curl/7.61.1-1/${MK_WIN32_ARCH}/lib/libcurl.lib")
   endif()
   LIST(APPEND CMAKE_REQUIRED_LIBRARIES "${CMAKE_BINARY_DIR}/.mkbuild/download/MK_DIST/windows/curl/7.61.1-1/${MK_WIN32_ARCH}/lib/libcurl.lib")
   LIST(APPEND CMAKE_REQUIRED_DEFINITIONS -DCURL_STATICLIB)
 else()
-  CHECK_INCLUDE_FILE_CXX("curl/curl.h" MK_HAVE_HEADER_5209)
-  if(NOT ("${MK_HAVE_HEADER_5209}"))
+  CHECK_INCLUDE_FILE_CXX("curl/curl.h" MK_HAVE_HEADER_4802)
+  if(NOT ("${MK_HAVE_HEADER_4802}"))
     message(FATAL_ERROR "cannot find: curl/curl.h")
   endif()
-  CHECK_LIBRARY_EXISTS("curl" "curl_easy_init" "" MK_HAVE_LIB_5368)
-  if(NOT ("${MK_HAVE_LIB_5368}"))
+  CHECK_LIBRARY_EXISTS("curl" "curl_easy_init" "" MK_HAVE_LIB_4961)
+  if(NOT ("${MK_HAVE_LIB_4961}"))
     message(FATAL_ERROR "cannot find: curl")
   endif()
   LIST(APPEND CMAKE_REQUIRED_LIBRARIES "curl")
+endif()
+
+#
+# generic-assets-20190520205742.tar.gz
+#
+
+message(STATUS "mkdirAll: ${CMAKE_BINARY_DIR}/.mkbuild/download")
+execute_process(COMMAND
+  ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/.mkbuild/download"
+  RESULT_VARIABLE FAILURE_5385)
+if("${FAILURE_5385}")
+  message(FATAL_ERROR "${FAILURE_5385}")
+endif()
+message(STATUS "download: https://github.com/measurement-kit/generic-assets/releases/download/20190520205742/generic-assets-20190520205742.tar.gz")
+file(DOWNLOAD https://github.com/measurement-kit/generic-assets/releases/download/20190520205742/generic-assets-20190520205742.tar.gz
+  "${CMAKE_BINARY_DIR}/.mkbuild/download/generic-assets-20190520205742.tar.gz"
+  EXPECTED_HASH SHA256=70d590c20b2ed31fd43cc63709b267672fecfeac7e908d11e845664ddd43b04f
+  TLS_VERIFY ON)
+message(STATUS "Extract: ${CMAKE_BINARY_DIR}/.mkbuild/download/generic-assets-20190520205742.tar.gz")
+execute_process(COMMAND
+  ${CMAKE_COMMAND} -E tar xf "${CMAKE_BINARY_DIR}/.mkbuild/download/generic-assets-20190520205742.tar.gz"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/.mkbuild/download"
+  RESULT_VARIABLE FAILURE_6246)
+if("${FAILURE_6246}")
+  message(FATAL_ERROR "${FAILURE_6246}")
 endif()
 
 #
@@ -156,9 +166,9 @@ endif()
 message(STATUS "mkdirAll: ${CMAKE_BINARY_DIR}/.mkbuild/include")
 execute_process(COMMAND
   ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/.mkbuild/include"
-  RESULT_VARIABLE FAILURE_5764)
-if("${FAILURE_5764}")
-  message(FATAL_ERROR "${FAILURE_5764}")
+  RESULT_VARIABLE FAILURE_6533)
+if("${FAILURE_6533}")
+  message(FATAL_ERROR "${FAILURE_6533}")
 endif()
 message(STATUS "download: https://raw.githubusercontent.com/measurement-kit/mkmock/v0.2.0/mkmock.hpp")
 file(DOWNLOAD https://raw.githubusercontent.com/measurement-kit/mkmock/v0.2.0/mkmock.hpp
@@ -166,8 +176,8 @@ file(DOWNLOAD https://raw.githubusercontent.com/measurement-kit/mkmock/v0.2.0/mk
   EXPECTED_HASH SHA256=f07bc063a2e64484482f986501003e45ead653ea3f53fadbdb45c17a51d916d2
   TLS_VERIFY ON)
 LIST(APPEND CMAKE_REQUIRED_INCLUDES "${CMAKE_BINARY_DIR}/.mkbuild/include")
-CHECK_INCLUDE_FILE_CXX("mkmock.hpp" MK_HAVE_HEADER_6292)
-if(NOT ("${MK_HAVE_HEADER_6292}"))
+CHECK_INCLUDE_FILE_CXX("mkmock.hpp" MK_HAVE_HEADER_7061)
+if(NOT ("${MK_HAVE_HEADER_7061}"))
   message(FATAL_ERROR "cannot find: mkmock.hpp")
 endif()
 
@@ -205,12 +215,14 @@ macro(MKSetRestrictiveCompilerFlags)
     set(MK_COMMON_FLAGS "${MK_COMMON_FLAGS} -Wsign-promo")
     set(MK_COMMON_FLAGS "${MK_COMMON_FLAGS} -Wnon-virtual-dtor")
     set(MK_COMMON_FLAGS "${MK_COMMON_FLAGS} -fstack-protector-all")
-    if(NOT "${APPLE}")
+    if(NOT "${APPLE}" AND NOT "${MINGW}")
       set(MK_LD_FLAGS "${MK_LD_FLAGS} -Wl,-z,noexecstack")
       set(MK_LD_FLAGS "${MK_LD_FLAGS} -Wl,-z,now")
       set(MK_LD_FLAGS "${MK_LD_FLAGS} -Wl,-z,relro")
       set(MK_LD_FLAGS "${MK_LD_FLAGS} -Wl,-z,nodlopen")
       set(MK_LD_FLAGS "${MK_LD_FLAGS} -Wl,-z,nodump")
+    elseif(("${MINGW}"))
+      set(MK_LD_FLAGS "${MK_LD_FLAGS} -static")
     endif()
     add_definitions(-D_FORTIFY_SOURCES=2)
   elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
@@ -305,7 +317,7 @@ add_test(
 #
 
 add_test(
-  NAME external_ca COMMAND mkcurl-client --ca-bundle-path ./.mkbuild/data/cacert.pem https://www.kernel.org
+  NAME external_ca COMMAND mkcurl-client --ca-bundle-path ./.mkbuild/download/ca-bundle.pem https://www.kernel.org
 )
 
 #

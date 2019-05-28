@@ -3,10 +3,10 @@ name: mkcurl
 docker: bassosimone/mk-debian
 
 dependencies:
-- curl.haxx.se/ca
 - github.com/adishavit/argh
 - github.com/catchorg/catch2
 - github.com/curl/curl
+- github.com/measurement-kit/generic-assets
 - github.com/measurement-kit/mkmock
 
 targets:
@@ -29,7 +29,7 @@ tests:
   integration_tests:
     command: integration-tests
   external_ca:
-    command: mkcurl-client --ca-bundle-path ./.mkbuild/data/cacert.pem
+    command: mkcurl-client --ca-bundle-path ./.mkbuild/download/ca-bundle.pem
       https://www.kernel.org
   http11_test:
     command: mkcurl-client https://ooni.torproject.org
