@@ -20,7 +20,7 @@
 static void usage() {
   // clang-format off
   std::clog << "\n";
-  std::clog << "Usage: mkcurl-client [options] <url>\n";
+  std::clog << "Usage: mkcurl-client [options] <url>...\n";
   std::clog << "\n";
   std::clog << "Options can start with either a single dash (i.e. -option) or\n";
   std::clog << "a double dash (i.e. --option). Available options:\n";
@@ -76,8 +76,8 @@ static void summary(mk::curl::Response &res) {
 
 int main(int, char **argv) {
   mk::curl::Request req;
+  argh::parser cmdline;
   {
-    argh::parser cmdline;
     cmdline.add_param("ca-bundle-path");
     cmdline.add_param("connect-to");
     cmdline.add_param("data");
@@ -129,20 +129,26 @@ int main(int, char **argv) {
       }
     }
     auto sz = cmdline.pos_args().size();
-    if (sz != 2) {
+    if (sz < 2) {
       // LCOV_EXCL_START
       usage();
       exit(EXIT_FAILURE);
       // LCOV_EXCL_STOP
     }
-    req.url = cmdline.pos_args()[1];
   }
-  mk::curl::Response res = mk::curl::perform(req);
-  summary(res);
-  if (res.error != 0 || res.status_code != 200) {
-    // LCOV_EXCL_START
-    std::clog << "FATAL: the request did not succeed" << std::endl;
-    exit(EXIT_FAILURE);
-    // LCOV_EXCL_STOP
+  auto exitcode = EXIT_SUCCESS;
+  mk::curl::Client client;
+  for (size_t sz = 1; sz < cmdline.pos_args().size(); ++sz) {
+    mk::curl::Request real_request{req};
+    real_request.url = cmdline.pos_args()[sz];
+    mk::curl::Response res = client.perform(real_request);
+    summary(res);
+    if (res.error != 0 || res.status_code != 200) {
+      // LCOV_EXCL_START
+      std::clog << "FATAL: the request did not succeed" << std::endl;
+      exitcode = EXIT_FAILURE;
+      // LCOV_EXCL_STOP
+    }
   }
+  exit(exitcode);
 }
