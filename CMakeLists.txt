@@ -210,10 +210,10 @@ macro(MKSetRestrictiveCompilerFlags)
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
       set(MK_COMMON_FLAGS "${MK_COMMON_FLAGS} -Wtrampolines")
     endif()
-    set(MK_COMMON_FLAGS "${MK_COMMON_FLAGS} -Woverloaded-virtual")
-    set(MK_COMMON_FLAGS "${MK_COMMON_FLAGS} -Wreorder")
-    set(MK_COMMON_FLAGS "${MK_COMMON_FLAGS} -Wsign-promo")
-    set(MK_COMMON_FLAGS "${MK_COMMON_FLAGS} -Wnon-virtual-dtor")
+    set(MK_CXX_FLAGS "${MK_CXX_FLAGS} -Woverloaded-virtual")
+    set(MK_CXX_FLAGS "${MK_CXX_FLAGS} -Wreorder")
+    set(MK_CXX_FLAGS "${MK_CXX_FLAGS} -Wsign-promo")
+    set(MK_CXX_FLAGS "${MK_CXX_FLAGS} -Wnon-virtual-dtor")
     set(MK_COMMON_FLAGS "${MK_COMMON_FLAGS} -fstack-protector-all")
     if(NOT "${APPLE}" AND NOT "${MINGW}")
       set(MK_LD_FLAGS "${MK_LD_FLAGS} -Wl,-z,noexecstack")
@@ -366,6 +366,14 @@ add_test(
 
 add_test(
   NAME redirect_test COMMAND mkcurl-client --follow-redirect http://google.com
+)
+
+#
+# test: reuseconnection
+#
+
+add_test(
+  NAME reuseconnection COMMAND mkcurl-client https://www.google.com https://www.google.com/robots.txt https://www.google.com/favicon.ico
 )
 
 #

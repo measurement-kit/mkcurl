@@ -46,3 +46,7 @@ tests:
       https://httpbin.org/put
   connect_to:
     command: mkcurl-client --connect-to www.google.com https://www.youtube.com
+  reuseconnection:
+    command: mkcurl-client https://www.google.com
+      https://www.google.com/robots.txt
+      https://www.google.com/favicon.ico

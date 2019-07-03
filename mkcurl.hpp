@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -108,6 +109,48 @@ struct Response {
   std::string http_version;
 };
 
+/// Client is an HTTP client. This class is movable but not copyable because
+/// at any give moment we want only a single client instance.
+///
+/// This is because a Client wraps a cURL handle and:
+///
+///   Handles. You must never share the same handle in multiple threads. You
+///   can pass the handles around among threads, but you must never use a single
+///   handle from more than one thread at any given time.
+///
+/// (see <https://curl.haxx.se/libcurl/c/threadsafe.html>) hence having single
+/// ownership in place guarantees that we cannot make such mistakes.
+class Client {
+ public:
+  /// Client creates a new client.
+  Client() noexcept;
+
+  /// Client is the deleted copy constructor.
+  Client(const Client &) noexcept = delete;
+
+  /// Client is the deleted copy assignment.
+  Client &operator=(const Client &) noexcept = delete;
+
+  /// Client is the move constructor.
+  Client(Client &&) noexcept;
+
+  /// Client is the move assignment.
+  Client &operator=(Client &&) noexcept;
+
+  /// ~Client is the destructor.
+  ~Client() noexcept;
+
+  /// perform performs @p request and returns the Response.
+  Response perform(const Request &request) noexcept;
+
+ private:
+  // Impl is the implementation of a client.
+  class Impl;
+
+  // impl_ is a unique pointer to the opaque implementation.
+  std::unique_ptr<Impl> impl_;
+};
+
 /// perform performs @p request and returns the Response.
 Response perform(const Request &request) noexcept;
 
@@ -123,7 +166,6 @@ Response perform(const Request &request) noexcept;
 
 #include <algorithm>
 #include <chrono>
-#include <memory>
 #include <sstream>
 
 #include <curl/curl.h>
@@ -165,6 +207,19 @@ struct mkcurl_deleter {
 
 // mkcurl_uptr is a unique pointer to a CURL handle.
 using mkcurl_uptr = std::unique_ptr<CURL, mkcurl_deleter>;
+
+// Client::Impl contains the implementation of a client.
+class Client::Impl {
+ public:
+  mkcurl_uptr handle;
+  Impl() noexcept = default;
+  Impl(const Impl &) noexcept = delete;
+  Impl &operator=(const Impl &) noexcept = delete;
+  Impl(Impl &&) noexcept = delete;
+  Impl &operator=(Impl &&) noexcept = delete;
+  ~Impl() noexcept;
+};
+Client::Impl::~Impl() noexcept = default; // Avoid `-Wweak-vtables`
 
 // mkcurl_slist is a curl_slist with RAII semantic.
 struct mkcurl_slist {
@@ -355,19 +410,37 @@ static CURLcode perform_and_retry(
   return rv;
 }
 
-Response perform(const Request &req) noexcept {
-  mkcurl_uptr handle;
-  {
+// perform2 will use @p handle to perform @p req. If @p handle is not set
+// we will initialise it. Otherwise the @p handle argument options are
+// reset to allow constructing a fresh HTTP request. Still, in such case, we'll
+// reuse existing connections etc. @return the response.
+static Response perform2(mkcurl_uptr &handle, const Request &req) noexcept {
+  Response res;
+  if (!handle) {
     CURL *handlep = curl_easy_init();
     MKCURL_HOOK_ALLOC(curl_easy_init, handlep, curl_easy_cleanup);
     handle.reset(handlep);
+    if (!handle) {
+      res.error = CURLE_OUT_OF_MEMORY;
+      mkcurl_log(res.logs, "curl_easy_init() failed");
+      return res;
+    }
+    // FALLTHROUGH
   }
-  Response res;
-  if (!handle) {
-    res.error = CURLE_OUT_OF_MEMORY;
-    mkcurl_log(res.logs, "curl_easy_init() failed");
-    return res;
-  }
+  /*
+   * From <https://curl.haxx.se/libcurl/c/curl_easy_reset.html>:
+   *
+   *   Re-initializes all options previously set on a specified CURL handle to
+   *   the default values. This puts back the handle to the same state as it was
+   *   in when it was just created with curl_easy_init.
+   *
+   *   It does not change the following information kept in the handle: live
+   *   connections, the Session ID cache, the DNS cache, the cookies and shares.
+   *
+   * So, this allows us to reuse the existing connections with a completely
+   * new request whose options can be set from scratch below.
+   */
+  curl_easy_reset(handle.get());
   mkcurl_slist headers;  // This must have function scope
   for (auto &s : req.headers) {
     curl_slist *slistp = curl_slist_append(headers.p, s.c_str());
@@ -670,6 +743,18 @@ Response perform(const Request &req) noexcept {
     res.http_version = HTTPVersionString(httpv);
   }
   return res;
+}
+
+Client::Client() noexcept { impl_.reset(new Client::Impl); }
+Client::Client(Client &&) noexcept = default;
+Client &Client::operator=(Client &&) noexcept = default;
+Client::~Client() noexcept = default;
+Response Client::perform(const Request &req) noexcept {
+  return perform2(impl_->handle, req);
+}
+
+Response perform(const Request &req) noexcept {
+  return Client{}.perform(req);
 }
 
 }  // namespace curl
