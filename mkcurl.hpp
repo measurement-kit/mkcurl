@@ -10,8 +10,15 @@
 #include <string>
 #include <vector>
 
+/// MKCURL_INLINE_NAMESPACE controls the inline inner namespace in which
+/// public symbols exported by this library are enclosed.
+///
+/// See <https://github.com/measurement-kit/measurement-kit/issues/1867#issuecomment-514562622>.
+#define MKCURL_INLINE_NAMESPACE v0_11_2_or_greater
+
 namespace mk {
 namespace curl {
+inline namespace MKCURL_INLINE_NAMESPACE {
 
 /// Request is an HTTP request.
 struct Request {
@@ -154,6 +161,7 @@ class Client {
 /// perform performs @p request and returns the Response.
 Response perform(const Request &request) noexcept;
 
+}  // inline namespace MKCURL_INLINE_NAMESPACE
 }  // namespace curl
 }  // namespace mk
 
@@ -188,6 +196,7 @@ Response perform(const Request &request) noexcept;
 
 namespace mk {
 namespace curl {
+inline namespace MKCURL_INLINE_NAMESPACE {
 
 // mkcurl_log appends @p line to @p logs. It adds information on the current
 // time in millisecond. It also appends a newline to the end of the line.
@@ -239,6 +248,7 @@ struct mkcurl_slist {
   curl_slist *p = nullptr;
 };
 
+}  // inline namespace MKCURL_INLINE_NAMESPACE
 }  // namespace curl
 }  // namespace mk
 
@@ -374,6 +384,7 @@ static int mkcurl_debug_cb_(CURL *handle,
 
 namespace mk {
 namespace curl {
+inline namespace MKCURL_INLINE_NAMESPACE {
 
 // HTTPVersionString returns a string representation of the cURL HTTP
 // version string in @p httpv. If @p httpv has an unknown value, the
@@ -757,6 +768,7 @@ Response perform(const Request &req) noexcept {
   return Client{}.perform(req);
 }
 
+}  // inline namespace MKCURL_INLINE_NAMESPACE
 }  // namespace curl
 }  // namespace mk
 #endif  // MKCURL_INLINE_IMPL
