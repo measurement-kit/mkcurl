@@ -25,6 +25,7 @@ set -x
 
 if [ $INTERNAL -eq 0 ]; then
   exec docker run --cap-add=NET_ADMIN \
+                  --cap-add=SYS_PTRACE \
                   -e CODECOV_TOKEN=$CODECOV_TOKEN \
                   -e TRAVIS_BRANCH=$TRAVIS_BRANCH \
                   -v "$(pwd):/mk" \
@@ -34,9 +35,6 @@ if [ $INTERNAL -eq 0 ]; then
 fi
 
 env | grep -v TOKEN | sort
-
-# Make sure we don't consume too much resources by bumping latency
-tc qdisc add dev eth0 root netem delay 200ms 10ms
 
 # Select the proper build flags depending on the build type
 if [ "$BUILD_TYPE" = "asan" ]; then
@@ -71,12 +69,21 @@ else
   exit 1
 fi
 
-# Configure, make, and make check equivalent
+# Configure and make equivalent
 mkdir -p build/$BUILD_TYPE
 cd build/$BUILD_TYPE
 cmake -GNinja -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE ../../
 cmake --build . -- -v
+
+# Make sure we don't consume too much resources by bumping latency. Not all
+# repositories need this feature. For them the code is commented out.
+#tc qdisc add dev eth0 root netem delay 200ms 10ms
+
+# Make check equivalent
 ctest --output-on-failure -a -j8
+
+# Stop adding latency. Commented out if we don't need it.
+#tc qdisc del dev eth0 root
 
 # Measure and possibly report the test coverage
 if [ "$BUILD_TYPE" = "coverage" ]; then
