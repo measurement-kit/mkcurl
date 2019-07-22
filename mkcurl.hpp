@@ -686,6 +686,9 @@ static Response perform2(mkcurl_uptr &handle, const Request &req) noexcept {
   {
     res.error = perform_and_retry(handle.get(), req.retries, res.logs);
     if (res.error != CURLE_OK) {
+      std::stringstream ss;
+      ss << "curl_easy_perform: " << curl_easy_strerror((CURLcode)res.error);
+      mkcurl_log(res.logs, ss.str());
       return res;
     }
   }
